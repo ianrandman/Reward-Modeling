@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <link href="/static/css/style.css" rel="stylesheet">
+    <link type="text/css" rel="stylesheet" href="/static/css/materialize.min.css"  media="screen,projection"/>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="/static/js/index.js"></script>
+</head>
+
+<body>
+
+<!--Titles-->
+<div class="row">
+    <div class="col s4 offset-s1"><h3 class="center-align">Left</h3></div>
+    <div class="col s4 offset-s2"><h3 class="center-align">Right</h3></div>
+</div>
+
+<!--TODO temp image for now-->
+<div class="row">
+    <div class="col s4 offset-s1"><div class="center-align"><img src="/static/img/square.png" width="80%"></div></div>
+    <div class="col s4 offset-s2"><div class="center-align"><img src="/static/img/square.png" width="80%"></div></div>
+</div>
+
+<!--Choice buttons-->
+<div class="row">
+    <div class="col s2 offset-s2">
+        <a onclick="left_clicked()" id="left_better" class="waves-effect waves-light btn-large blue-grey">Left is better</a>
+    </div>
+    <div class="col s2 offset-s1">
+        <a onclick="center_clicked()" id="neither_better" class="waves-effect waves-light btn-large blue-grey">Can't tell</a>
+    </div>
+    <div class="col s2 offset-s1">
+        <a onclick="right_clicked()" class="waves-effect waves-light btn-large blue-grey">Right is better</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col s12"><h5 id="diagnostics" class="center-align">Diagnostics</h5></div>
+</div>
+
+<script type="text/javascript" src="static/js/materialize.min.js"></script>
+</body>
+</html>
