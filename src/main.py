@@ -11,7 +11,7 @@ def main():
     app = web.get_webapp(trajectory_builder)
     threading.Thread(target=app.run(host='0.0.0.0', port=5000)).start()
 
-    # start up A2C reward model system
+    # start up a2c reward model system
 
 
 if __name__ == "__main__":
