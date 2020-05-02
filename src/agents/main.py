@@ -35,7 +35,7 @@ def main():
 
     pre = gym.make(env_name)
     env = Monitor(pre, 'temp/experiment_1', video_callable=lambda episode_id: episode_id % 1 == 0, force=True)
-    scores, i, average, max_score = [], 0, 0, 0
+    scores, i, average, max_score, num_steps = [], 0, 0, 0, 0
 
     state_size = env.observation_space.shape[0]
     action_dim = gym.make(env_name).action_space.n
@@ -50,8 +50,9 @@ def main():
             # if average > 50:
             #     env.render()
 
+            num_steps += 1
             action = agent.get_action(state)
-            next_state, reward, done, info = env.step(action)
+            next_state, reward, done, info = env.step(state, action)
             next_state = np.reshape(next_state, [1, state_size])
             # if an action make the episode end, then gives penalty of -100
             reward = reward if not done or score == 499 else -100
@@ -70,7 +71,9 @@ def main():
                 average = np.mean(scores)
                 i += 1
                 # every episode, plot the play time
-                print(str(i) + ', ' + str(score) + ', ' + str(int(average)) + ', ' + str(int(max_score)))
+                print('%s, %s, %s, %s, %s' % (i, num_steps, score, average, max_score))
+                num_steps = 0
+                # print(str(i) + ', ' + str(score) + ', ' + str(int(average)) + ', ' + str(int(max_score)))
 
     pre.close()
     env.close()

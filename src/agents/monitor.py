@@ -10,6 +10,7 @@ from gym.utils.json_utils import json_encode_np
 FILE_PREFIX = 'openaigym'
 MANIFEST_PREFIX = FILE_PREFIX + '.manifest'
 
+
 class Monitor(Wrapper):
     def __init__(self, env, directory, video_callable=None, force=False, resume=False,
                  write_upon_reset=False, uid=None, mode=None):
@@ -17,18 +18,23 @@ class Monitor(Wrapper):
 
         self.videos = []
 
+        self.total_steps = 0
+        self.state_actions = list()
+        self.state_actions_dict = {'pairs': self.state_actions}
+
         self.stats_recorder = None
         self.video_recorder = None
         self.enabled = False
         self.episode_id = 0
+        self.num_vid = 0
         self._monitor_id = None
         self.env_semantics_autoreset = env.metadata.get('semantics.autoreset')
 
         self._start(directory, video_callable, force, resume,
                             write_upon_reset, uid, mode)
 
-    def step(self, action):
-        self._before_step(action)
+    def step(self, state, action):
+        self._before_step(state, action)
         observation, reward, done, info = self.env.step(action)
         done = self._after_step(observation, reward, done, info)
 
@@ -158,12 +164,16 @@ class Monitor(Wrapper):
             raise error.Error('Invalid mode {}: must be "training" or "evaluation"', mode)
         self.stats_recorder.type = type
 
-    def _before_step(self, action):
+    def _before_step(self, state, action):
         if not self.enabled: return
+
+        self.state_actions.append({'state': state[0].tolist(), 'action': action})
         #self.stats_recorder.before_step(action)
 
     def _after_step(self, observation, reward, done, info):
         if not self.enabled: return done
+
+        self.total_steps += 1
 
         if done and self.env_semantics_autoreset:
             # For envs with BlockingReset wrapping VNCEnv, this observation will be the first one of the new episode
@@ -171,11 +181,31 @@ class Monitor(Wrapper):
             self.episode_id += 1
             self._flush()
 
+        elif done:
+            json_path = os.path.join(self.directory, 'video{:06}_{:06}'.format(self.episode_id,
+                                                                                           self.num_vid)) + '.json'
+            with open(json_path, 'w') as f:
+                json.dump(self.state_actions_dict, f)
+
+            self.state_actions = list()
+
+            self.episode_id += 1
+            self.num_vid = 0
+
         # Record stats
         #self.stats_recorder.after_step(observation, reward, done, info)
         # Record video
         self.video_recorder.capture_frame()
-        # if self.steps
+        if self.total_steps >= 30:
+            json_path = os.path.join(self.directory, 'video{:06}_{:06}'.format(self.episode_id,
+                                                                               self.num_vid)) + '.json'
+            with open(json_path, 'w') as f:
+                json.dump(self.state_actions_dict, f)
+            self.state_actions = list()
+
+            if not done:
+                self.num_vid += 1
+                self.reset_video_recorder()
 
         return done
 
@@ -187,12 +217,13 @@ class Monitor(Wrapper):
         if not self.enabled: return
 
         # Reset the stat count
-        #self.stats_recorder.after_reset(observation)
+        # self.stats_recorder.after_reset(observation)
 
         self.reset_video_recorder()
 
         # Bump *after* all reset activity has finished
-        self.episode_id += 1
+        # self.episode_id += 1
+        # self.num_vid = 0
 
         self._flush()
 
@@ -206,11 +237,14 @@ class Monitor(Wrapper):
         # TODO: calculate a more correct 'episode_id' upon merge
         self.video_recorder = video_recorder.VideoRecorder(
             env=self.env,
-            base_path=os.path.join(self.directory, '{}.video.{}.video{:06}'.format(self.file_prefix, self.file_infix, self.episode_id)),
+            base_path=os.path.join(self.directory, 'video{:06}_{:06}'.format(self.episode_id,
+                                                                                     self.num_vid)),
             # metadata={'episode_id': self.episode_id},
             enabled=self._video_enabled(),
         )
         self.video_recorder.capture_frame()
+
+        self.total_steps = 0
 
     def _close_video_recorder(self):
         self.video_recorder.close()
