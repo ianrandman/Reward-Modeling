@@ -1,27 +1,27 @@
 let DOMAIN = window.location.protocol + "//" + window.location.host;
 
-var trajectory1;
-var trajectory2;
+let sequence1;
+let sequence2;
 
 $(document).ready(function(){
     get_pair();
  });
 
 
-function update_tragectory(data) {
-    console.log("updating trajectories");
-    trajectory1 = JSON.parse(data).t1;
-    trajectory2 = JSON.parse(data).t2;
-    var traj1 = "data:video/mp4;base64,"+trajectory1;
-    var traj2 = "data:video/mp4;base64,"+trajectory2;
-    $("#traj1").attr("src", traj1);
-    $("#traj2").attr("src", traj2);
+function update_sequences(data) {
+    console.log("updating sequences");
+    sequence1 = JSON.parse(data).seq1;
+    sequence2 = JSON.parse(data).seq2;
+    var traj1 = "data:video/mp4;base64,"+sequence1.vid;
+    var traj2 = "data:video/mp4;base64,"+sequence2.vid;
+    $("#trajL").attr("src", traj1);
+    $("#trajR").attr("src", traj2);
 }
 
 function get_pair() {
     console.log("getting a new pair");
 $.get( "/getpair", function(data) {
-        update_tragectory(data);
+        update_sequences(data);
     })
     .fail(function(error) {
         alert( error );
@@ -33,10 +33,10 @@ function send_preference(pref) {
     $.ajax({
     type: "POST",
     url: "/preference",
-    //return a json string where t is the trajectory and p is the preference
-    data: JSON.stringify({ t1: trajectory1, t2: trajectory2,p: pref }),
+    //return a json string where t is the sequence and p is the preference
+    data: JSON.stringify({ env: env, seq1: sequence1.sopairs, seq2: sequence2.sopairs, p: pref }),
     contentType: "application/json; charset=utf-8",
-    success: function(data){update_tragectory(data);},
+    success: function(data){update_sequences(data);},
     failure: function(errMsg) {
         get_pair();
     }
@@ -44,13 +44,13 @@ function send_preference(pref) {
 }
 
 function left_clicked() {
-    send_preference("L");
+    send_preference(0);
 }
 
 function center_clicked() {
-    send_preference("N");
+    send_preference(0.5);
 }
 
 function right_clicked() {
-    send_preference("R");
+    send_preference(1);
 }

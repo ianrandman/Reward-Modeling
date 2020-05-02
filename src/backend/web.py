@@ -4,21 +4,13 @@ from flask import jsonify
 import json
 
 
-def get_pref_db():
-    try:
-        f = open("pref_db.json")
+def get_pref_db(env):
+    with open("preferences/"+env+"/pref_db.json") as f:
+        f = open("preferences/" + env + "/pref_db.json")
         return json.load(f)
-    except IOError:
-        f = open("pref_db.json", "x")
-        new_f = {"preferences": []}
-        json.dump(new_f, f)
-        return new_f
-    finally:
-        f.close()
 
-
-def save_pref_db(pref_db):
-    with open('pref_db.json', 'w') as json_file:
+def save_pref_db(pref_db, env):
+    with open("preferences/"+env+'/pref_db.json', 'w') as json_file:
         json.dump(pref_db, json_file)
 
 
@@ -26,9 +18,9 @@ def get_webapp(trajectory_builder):
     app = Flask(__name__)
 
     # PAGE ROUTES
-    @app.route("/env")
+    @app.route("/cartpole")
     def env():
-        return render_template('env.html')
+        return render_template('env.html', env_name="cartpole")
 
     @app.route("/")
     def main():
@@ -38,14 +30,16 @@ def get_webapp(trajectory_builder):
     @app.route("/getpair")
     def get_pair():
         data = json.dumps(trajectory_builder.get_pair())
-        print(data)
         return data
 
     @app.route('/preference', methods=['POST'])
     def update_text():
-        pref_db = get_pref_db()
-        pref_db['preferences'].append(request.json)
-        save_pref_db(pref_db)
+        req = request.json
+        env = req["env"]
+        del req['env']
+        pref_db = get_pref_db(env)
+        pref_db['preferences'].append(req)
+        save_pref_db(pref_db, env)
         return get_pair()
 
     return app

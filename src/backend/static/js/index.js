@@ -1,6 +1,6 @@
-$(document).ready(function(){
-    get_pair();
- });
+// $(document).ready(function(){
+//     get_pair();
+//  });
 
 const filenames = {"cart":"cartpole.png", "hop":"hopper.png", "human":"humanoid.png", "lunar":"lunar_lander.png"};
 available_envs = ["cart", "hop", "human", "lunar"];
@@ -25,7 +25,7 @@ function populate_page(available_envs) {
 
 function get_envs() {
 $.get( "/getenvs", function(data) {
-        update_tragectory(data);
+        update_sequences(data);
     })
     .fail(function(error) {
         alert( error );

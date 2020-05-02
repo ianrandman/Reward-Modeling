@@ -20,15 +20,23 @@ class TrajectoryBuilder:
     def get_variance(self, seg1, seg2):
         return random.randint(0, 100)
 
+    def get_metadata(self):
+        """
+        Returns a map with some metadata about the model
+        """
+        return {}
+
     def get_pair(self, sample_size=20):
         """
         :return: the binary of two video files for the user to compare
         """
         dir_path = path.dirname(path.abspath(__file__)) + "/agents/temp/experiment_1/"
         filenames = [f for f in listdir(dir_path) if f[-4:] == 'json' and isfile(join(dir_path, f))]
+        filenames.sort(key=path.basename)  # sort list of names
+        filenames = filenames[:-1]
 
         max_variance = -1
-        most_variable_pair = []
+        mvpair = []
 
         for _ in range(sample_size):
             pair = random.sample(filenames, 2)
@@ -40,15 +48,17 @@ class TrajectoryBuilder:
                     variance = self.get_variance(data1["pairs"], data2["pairs"])
                     if variance > max_variance:
                         max_variance = variance
-                        most_variable_pair = pair
+                        mvpair = [(pair[0], data1), (pair[1], data2)]
 
-        print("most_variable_pair: "+ str(most_variable_pair))
         # get the mp4 video with the same title as the json file
-        most_variable_pair = [x[:-4]+"mp4" for x in most_variable_pair]
+        vids = [x[0][:-4]+"mp4" for x in mvpair]
         # convert to the binary of the mp4 files
-        most_variable_pair = [self.get_binary(dir_path+most_variable_pair[0]), self.get_binary(dir_path+most_variable_pair[1])]
-        print("returning: "+str({"t1": most_variable_pair[0], "t2": most_variable_pair[1]}))
-        return {"t1": most_variable_pair[0], "t2": most_variable_pair[1]}
+        env_vids = [self.get_binary(dir_path+vids[0]), self.get_binary(dir_path+vids[1])]
+        # return {"t1": mvpair[0], "t2": mvpair[1]}
+
+        return {"seq1": {"sopairs": mvpair[0][1]["pairs"], "vid": env_vids[0]},
+                "seq2": {"sopairs": mvpair[1][1]["pairs"], "vid": env_vids[1]},
+                "metadata": self.get_metadata()}
 
 
 if __name__ == '__main__':
