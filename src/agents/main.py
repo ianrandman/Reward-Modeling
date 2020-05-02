@@ -68,7 +68,7 @@ def main():
                 average = np.mean(scores)
                 i += 1
                 # every episode, plot the play time
-                print(str(i + 1) + ', ' + str(score) + ', ' + str(int(average)) + ', ' + str(int(max_score)))
+                print(str(i) + ', ' + str(score) + ', ' + str(int(average)) + ', ' + str(int(max_score)))
 
     pre.close()
     env.close()
