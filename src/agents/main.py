@@ -2,11 +2,13 @@ import gym
 import argparse
 import numpy as np
 from a2c.a2c import A2CAgent
-from gym import wrappers
+# from gym import wrappers
+from agents.monitor import Monitor
 
 
 class Agent(object):
     """The world's simplest agents!"""
+
     def __init__(self, action_space):
         self.action_space = action_space
 
@@ -32,13 +34,13 @@ def main():
     # agents = Agent(env.action_space)
 
     pre = gym.make(env_name)
-    env = wrappers.Monitor(pre, 'temp/experiment_1', force=True)
+    env = Monitor(pre, 'temp/experiment_1', video_callable=lambda episode_id: episode_id % 1 == 0, force=True)
     scores, i, average, max_score = [], 0, 0, 0
 
     state_size = env.observation_space.shape[0]
     action_dim = gym.make(env_name).action_space.n
     agent = A2CAgent(state_size=state_size, action_size=action_dim)
-    for _ in range(30):
+    for _ in range(10):
         done = False
         score = 0
         state = env.reset()
@@ -72,6 +74,7 @@ def main():
 
     pre.close()
     env.close()
+
 
 if __name__ == '__main__':
     main()
