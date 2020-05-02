@@ -37,13 +37,15 @@ def get_webapp(trajectory_builder):
     # API ROUTES
     @app.route("/getpair")
     def get_pair():
-        return trajectory_builder.get_pair()
+        data = json.dumps(trajectory_builder.get_pair())
+        print(data)
+        return data
 
     @app.route('/preference', methods=['POST'])
     def update_text():
         pref_db = get_pref_db()
         pref_db['preferences'].append(request.json)
         save_pref_db(pref_db)
-        return jsonify(get_pair())
+        return get_pair()
 
     return app
