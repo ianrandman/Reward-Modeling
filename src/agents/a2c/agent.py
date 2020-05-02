@@ -11,7 +11,7 @@ class Agent:
         self.inp_dim = inp_dim
         self.out_dim = out_dim
         # self.rms_optimizer = RMSprop(lr=lr, epsilon=0.1, rho=0.99)
-        self.rms_optimizer = Adam(lr=lr, epsilon=0.1)
+        self.rms_optimizer = Adam(lr=lr)
 
     def fit(self, inp, targ):
         """ Perform one epoch of training
