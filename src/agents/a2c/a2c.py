@@ -18,10 +18,10 @@ class A2CAgent:
 
         self.accumulated_steps = 0
         self.accumulated_steps = []
-        self.max_steps = 3
+        self.max_steps = 10
 
         # These are hyper parameters for the Policy Gradient
-        self.discount_factor = 0.95
+        self.discount_factor = 0.9
         self.actor_lr = 0.001
         self.critic_lr = 0.005
 
