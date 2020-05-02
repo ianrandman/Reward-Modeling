@@ -2,6 +2,7 @@ import gym
 import argparse
 import numpy as np
 from a2c.a2c import A2CAgent
+from gym import wrappers
 
 
 class Agent(object):
@@ -30,21 +31,22 @@ def main():
     # env.seed(0)
     # agents = Agent(env.action_space)
 
-    env = gym.make(env_name)
+    pre = gym.make(env_name)
+    env = wrappers.Monitor(pre, 'temp/experiment_1', force=True)
     scores, i, average, max_score = [], 0, 0, 0
 
     state_size = env.observation_space.shape[0]
     action_dim = gym.make(env_name).action_space.n
     agent = A2CAgent(state_size=state_size, action_size=action_dim)
-    while True:
+    for _ in range(30):
         done = False
         score = 0
         state = env.reset()
         state = np.reshape(state, [1, state_size])
 
         while not done:
-            if average > 150:
-                env.render()
+            # if average > 50:
+            #     env.render()
 
             action = agent.get_action(state)
             next_state, reward, done, info = env.step(action)
@@ -68,6 +70,8 @@ def main():
                 # every episode, plot the play time
                 print(str(i + 1) + ', ' + str(score) + ', ' + str(int(average)) + ', ' + str(int(max_score)))
 
+    pre.close()
+    env.close()
 
 if __name__ == '__main__':
     main()
