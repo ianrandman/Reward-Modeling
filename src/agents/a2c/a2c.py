@@ -1,16 +1,6 @@
-import random
 import numpy as np
 
-from tqdm import tqdm
-from keras.models import Model
-from keras import regularizers
-from keras.utils import to_categorical
-from keras.layers import Input, Dense, Flatten
-
-import tensorflow as tf
-
-from .critic import Critic
-from .actor import Actor
+from keras.layers import Dense
 
 from keras.optimizers import Adam
 from keras.models import Sequential
@@ -26,8 +16,12 @@ class A2CAgent:
         self.action_size = action_size
         self.value_size = 1
 
+        self.accumulated_steps = 0
+        self.accumulated_steps = []
+        self.max_steps = 3
+
         # These are hyper parameters for the Policy Gradient
-        self.discount_factor = 0.99
+        self.discount_factor = 0.95
         self.actor_lr = 0.001
         self.critic_lr = 0.005
 
@@ -67,155 +61,43 @@ class A2CAgent:
     # using the output of policy network, pick action stochastically
     def get_action(self, state):
         policy = self.actor.predict(state, batch_size=1).flatten()
-        return np.random.choice(self.action_size, 1, p=policy)[0]
+        return np.random.choice(self.action_size, p=policy)
 
     # update policy network every episode
     def train_model(self, state, action, reward, next_state, done):
-        target = np.zeros((1, self.value_size))
-        advantages = np.zeros((1, self.action_size))
+        self.accumulated_steps.append((state, action, reward))
 
-        value = self.critic.predict(state)[0]
-        next_value = self.critic.predict(next_state)[0]
+        # only update model after max_steps
+        if len(self.accumulated_steps) <= self.max_steps and not done:
+            return[0]
 
-        if done:
-            advantages[0][action] = reward - value
-            target[0][0] = reward
-        else:
-            advantages[0][action] = reward + self.discount_factor * (next_value) - value
-            target[0][0] = reward + self.discount_factor * next_value
+        states = [step[0] for step in self.accumulated_steps]
+        actions = [step[1] for step in self.accumulated_steps]
+        rewards = [step[2] for step in self.accumulated_steps]
 
-        self.actor.fit(state, advantages, epochs=1, verbose=0)
-        self.critic.fit(state, target, epochs=1, verbose=0)
+        v_hats = [self.critic.predict(state)[0] for state in states]
+        v_actuals = []
 
+        # calculate discounted actual rewards plus the discounted final v_hat
+        discounted_rewards = [x*(np.power(self.discount_factor, i)) for i, x in enumerate(rewards[:-1])]
+        v_actuals.append(sum(discounted_rewards) +
+                         v_hats[-1] * np.power(self.discount_factor, len(self.accumulated_steps)-1))
 
-def tfSummary(tag, val):
-    """ Scalar Value Tensorflow Summary
-    """
-    return tf.Summary(value=[tf.Summary.Value(tag=tag, simple_value=val)])
+        # update other v_actuals using previous v_actual minus reward
+        for i in range(1, len(self.accumulated_steps)-1):
+            v_actuals.append(v_actuals[i-1] - discounted_rewards[i-1])
 
+        advantages = np.subtract(v_actuals, v_hats[:-1])
+        critic_target = v_actuals
 
-def gather_stats(agent, env):
-  """ Compute average rewards over 10 episodes
-  """
-  score = []
-  for k in range(10):
-      old_state = env.reset()
-      cumul_r, done = 0, False
-      while not done:
-          a = agent.policy_action(old_state)
-          old_state, r, done, _ = env.step(a)
-          cumul_r += r
-      score.append(cumul_r)
-  return np.mean(np.array(score)), np.std(np.array(score))
+        actor_target = np.zeros((len(self.accumulated_steps)-1, self.action_size))
+        for i, x in enumerate(actions[:-1]):
+            actor_target[i][x] = advantages[i]
 
-class A2C:
-    """ Actor-Critic Main Algorithm
-    """
+        states = np.array([state[0] for state in states[:-1]])
+        actor_target = np.array(actor_target)
+        critic_target = np.array(critic_target)
+        self.critic.fit(states, critic_target, epochs=1, verbose=0)
+        self.actor.fit(states, actor_target, epochs=1, verbose=0)
 
-    def __init__(self, act_dim, env_dim, k, gamma=0.99, lr = 0.01):
-        """ Initialization
-        """
-        # Environment and a2c parameters
-        self.act_dim = act_dim
-        self.env_dim = (k,) + env_dim
-        self.gamma = gamma
-        self.lr = lr
-        # Create actor and critic networks
-        self.shared = self.buildNetwork()
-        self.actor = Actor(self.env_dim, act_dim, self.shared, lr)
-        self.critic = Critic(self.env_dim, act_dim, self.shared, lr)
-        # Build optimizers
-        self.a_opt = self.actor.optimizer()
-        self.c_opt = self.critic.optimizer()
-
-    def buildNetwork(self):
-        """ Assemble shared layers
-        """
-        inp = Input((self.env_dim))
-        x = Flatten()(inp)
-        x = Dense(64, activation='relu')(x)
-        x = Dense(128, activation='relu')(x)
-        return Model(inp, x)
-
-    def policy_action(self, s):
-        """ Use the actor to predict the next action to take, using the policy
-        """
-        return np.random.choice(np.arange(self.act_dim), 1, p=self.actor.predict(s).ravel())[0]
-
-    def discount(self, r):
-        """ Compute the gamma-discounted rewards over an episode
-        """
-        discounted_r, cumul_r = np.zeros_like(r), 0
-        for t in reversed(range(0, len(r))):
-            cumul_r = r[t] + cumul_r * self.gamma
-            discounted_r[t] = cumul_r
-        return discounted_r
-
-    def train_models(self, states, actions, rewards, done):
-        """ Update actor and critic networks from experience
-        """
-        # Compute discounted rewards and Advantage (TD. Error)
-        discounted_rewards = self.discount(rewards)
-        state_values = self.critic.predict(np.array(states))
-        advantages = discounted_rewards - np.reshape(state_values, len(state_values))
-        # Networks optimization
-        self.a_opt([states, actions, advantages])
-        self.c_opt([states, discounted_rewards])
-
-    def train(self, env, args, summary_writer):
-        """ Main a2c Training Algorithm
-        """
-
-        results = []
-
-        # Main Loop
-        tqdm_e = tqdm(range(args.nb_episodes), desc='Score', leave=True, unit=" episodes")
-        for e in tqdm_e:
-
-            # Reset episode
-            time, cumul_reward, done = 0, 0, False
-            old_state = env.reset()
-            actions, states, rewards = [], [], []
-
-            while not done:
-                if args.render: env.render()
-                # Actor picks an action (following the policy)
-                a = self.policy_action(old_state)
-                # Retrieve new state, reward, and whether the state is terminal
-                new_state, r, done, _ = env.step(a)
-                # Memorize (s, a, r) for training
-                actions.append(to_categorical(a, self.act_dim))
-                rewards.append(r)
-                states.append(old_state)
-                # Update current state
-                old_state = new_state
-                cumul_reward += r
-                time += 1
-
-            # Train using discounted rewards ie. compute updates
-            self.train_models(states, actions, rewards, done)
-
-            # Gather stats every episode for plotting
-            if(args.gather_stats):
-                mean, stdev = gather_stats(self, env)
-                results.append([e, mean, stdev])
-
-            # Export results for Tensorboard
-            score = tfSummary('score', cumul_reward)
-            summary_writer.add_summary(score, global_step=e)
-            summary_writer.flush()
-
-            # Display score
-            tqdm_e.set_description("Score: " + str(cumul_reward))
-            tqdm_e.refresh()
-
-        return results
-
-    def save_weights(self, path):
-        path += '_LR_{}'.format(self.lr)
-        self.actor.save(path)
-        self.critic.save(path)
-
-    def load_weights(self, path_actor, path_critic):
-        self.critic.load_weights(path_critic)
-        self.actor.load_weights(path_actor)
+        self.accumulated_steps = [self.accumulated_steps[-1]]

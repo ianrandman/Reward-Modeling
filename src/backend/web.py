@@ -25,10 +25,16 @@ def save_pref_db(pref_db):
 def get_webapp(trajectory_builder):
     app = Flask(__name__)
 
+    # PAGE ROUTES
+    @app.route("/env")
+    def env():
+        return render_template('env.html')
+
     @app.route("/")
     def main():
         return render_template('index.html')
 
+    # API ROUTES
     @app.route("/getpair")
     def get_pair():
         return trajectory_builder.get_pair()
