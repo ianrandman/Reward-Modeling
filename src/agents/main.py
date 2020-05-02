@@ -34,13 +34,14 @@ def main():
     # agents = Agent(env.action_space)
 
     pre = gym.make(env_name)
-    env = Monitor(pre, 'temp/experiment_1', video_callable=lambda episode_id: episode_id % 1 == 0, force=True)
+    env = Monitor(pre, 'temp/experiment_1',max_segments=100, max_steps=20,
+                  video_callable=lambda episode_id: episode_id% 10 == 0, force=True)
     scores, i, average, max_score, num_steps = [], 0, 0, 0, 0
 
     state_size = env.observation_space.shape[0]
     action_dim = gym.make(env_name).action_space.n
     agent = A2CAgent(state_size=state_size, action_size=action_dim)
-    for _ in range(10):
+    while True:
         done = False
         score = 0
         state = env.reset()

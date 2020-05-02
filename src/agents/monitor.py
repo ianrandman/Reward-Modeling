@@ -12,8 +12,8 @@ MANIFEST_PREFIX = FILE_PREFIX + '.manifest'
 
 
 class Monitor(Wrapper):
-    def __init__(self, env, directory, max_segments=3, video_callable=None, force=False, resume=False,
-                 write_upon_reset=False, uid=None, mode=None):
+    def __init__(self, env, directory, max_segments=100, max_steps=20, video_callable=None, force=False,
+                 resume=False, write_upon_reset=False, uid=None, mode=None):
         super(Monitor, self).__init__(env)
 
         self.videos = []
@@ -22,6 +22,7 @@ class Monitor(Wrapper):
         self.state_actions = list()
         self.state_actions_dict = {'pairs': self.state_actions}
         self.max_segments = max_segments
+        self.max_steps = max_steps
 
         self.stats_recorder = None
         self.video_recorder = None
@@ -196,7 +197,7 @@ class Monitor(Wrapper):
         #self.stats_recorder.after_step(observation, reward, done, info)
         # Record video
         self.video_recorder.capture_frame()
-        if self.total_steps >= self.max_segments and not done:
+        if self.total_steps >= self.max_steps and not done:
             self._dump_json()
             self.num_vid += 1
             self.reset_video_recorder()
