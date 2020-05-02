@@ -168,12 +168,13 @@ class Monitor(Wrapper):
         return os.path.join(self.directory, 'video{:06}_{:06}'.format(self.episode_id, self.num_vid))
 
     def _dump_json(self):
-        json_path = self._get_path() + '.json'
-        with open(json_path, 'w') as f:
-            json.dump(self.state_actions_dict, f)
-        self.state_actions = list()
+        if self._video_enabled():
+            json_path = self._get_path() + '.json'
+            with open(json_path, 'w') as f:
+                json.dump(self.state_actions_dict, f)
+            self.state_actions = list()
 
-        self._clean_files()
+            self._clean_files()
 
     def _after_step(self, observation, reward, done, info):
         if not self.enabled: return done
