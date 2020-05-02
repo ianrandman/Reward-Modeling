@@ -1,7 +1,7 @@
 import gym
 from gym import Wrapper
 from gym import error, version, logger
-import os, json, numpy as np, six
+import os, json, numpy as np, six, glob
 from gym.wrappers.monitoring import stats_recorder
 from agents import video_recorder
 from gym.utils import atomic_write, closer
@@ -12,7 +12,7 @@ MANIFEST_PREFIX = FILE_PREFIX + '.manifest'
 
 
 class Monitor(Wrapper):
-    def __init__(self, env, directory, video_callable=None, force=False, resume=False,
+    def __init__(self, env, directory, max_segments=3, video_callable=None, force=False, resume=False,
                  write_upon_reset=False, uid=None, mode=None):
         super(Monitor, self).__init__(env)
 
@@ -21,6 +21,7 @@ class Monitor(Wrapper):
         self.total_steps = 0
         self.state_actions = list()
         self.state_actions_dict = {'pairs': self.state_actions}
+        self.max_segments = max_segments
 
         self.stats_recorder = None
         self.video_recorder = None
@@ -120,23 +121,6 @@ class Monitor(Wrapper):
             return
 
         return
-        self.stats_recorder.flush()
-
-        # Give it a very distiguished name, since we need to pick it
-        # up from the filesystem later.
-        path = os.path.join(self.directory, '{}.manifest.{}.manifest.json'.format(self.file_prefix, self.file_infix))
-        logger.debug('Writing training manifest file to %s', path)
-        with atomic_write.atomic_write(path) as f:
-            # We need to write relative paths here since people may
-            # move the training_dir around. It would be cleaner to
-            # already have the basenames rather than basename'ing
-            # manually, but this works for now.
-            json.dump({
-                'stats': os.path.basename(self.stats_recorder.path),
-                'videos': [(os.path.basename(v), os.path.basename(m))
-                           for v, m in self.videos],
-                'env_info': self._env_info(),
-            }, f, default=json_encode_np)
 
     def close(self):
         """Flush all monitor data to disk and close any open rending windows."""
@@ -170,6 +154,27 @@ class Monitor(Wrapper):
         self.state_actions.append({'state': state[0].tolist(), 'action': action})
         #self.stats_recorder.before_step(action)
 
+    def _clean_files(self):
+        list_of_jsons = [f for f in glob.glob(os.path.join(self.directory, '*.json'))]
+        list_of_mp4s = [f for f in glob.glob(os.path.join(self.directory, '*.mp4'))]
+
+        if len(list_of_jsons) > self.max_segments:
+            oldest_file = min(list_of_mp4s, key=os.path.basename)
+            os.remove(os.path.abspath(oldest_file))
+            oldest_file = min(list_of_jsons, key=os.path.basename)
+            os.remove(os.path.abspath(oldest_file))
+
+    def _get_path(self):
+        return os.path.join(self.directory, 'video{:06}_{:06}'.format(self.episode_id, self.num_vid))
+
+    def _dump_json(self):
+        json_path = self._get_path() + '.json'
+        with open(json_path, 'w') as f:
+            json.dump(self.state_actions_dict, f)
+        self.state_actions = list()
+
+        self._clean_files()
+
     def _after_step(self, observation, reward, done, info):
         if not self.enabled: return done
 
@@ -182,13 +187,7 @@ class Monitor(Wrapper):
             self._flush()
 
         elif done:
-            json_path = os.path.join(self.directory, 'video{:06}_{:06}'.format(self.episode_id,
-                                                                                           self.num_vid)) + '.json'
-            with open(json_path, 'w') as f:
-                json.dump(self.state_actions_dict, f)
-
-            self.state_actions = list()
-
+            self._dump_json()
             self.episode_id += 1
             self.num_vid = 0
 
@@ -196,16 +195,10 @@ class Monitor(Wrapper):
         #self.stats_recorder.after_step(observation, reward, done, info)
         # Record video
         self.video_recorder.capture_frame()
-        if self.total_steps >= 30:
-            json_path = os.path.join(self.directory, 'video{:06}_{:06}'.format(self.episode_id,
-                                                                               self.num_vid)) + '.json'
-            with open(json_path, 'w') as f:
-                json.dump(self.state_actions_dict, f)
-            self.state_actions = list()
-
-            if not done:
-                self.num_vid += 1
-                self.reset_video_recorder()
+        if self.total_steps >= self.max_segments and not done:
+            self._dump_json()
+            self.num_vid += 1
+            self.reset_video_recorder()
 
         return done
 
@@ -281,7 +274,7 @@ def detect_training_manifests(training_dir, files=None):
     return [os.path.join(training_dir, f) for f in files if f.startswith(MANIFEST_PREFIX + '.')]
 
 def detect_monitor_files(training_dir):
-    return [os.path.join(training_dir, f) for f in os.listdir(training_dir) if f.startswith(FILE_PREFIX + '.')]
+    return [os.path.join(training_dir, f) for f in os.listdir(training_dir)]# if f.startswith(FILE_PREFIX + '.')]
 
 def clear_monitor_files(training_dir):
     files = detect_monitor_files(training_dir)
