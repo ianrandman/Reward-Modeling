@@ -4,7 +4,7 @@ import numpy as np
 from a2c.a2c import A2C
 from a2c_continuous.a2c import A2C_Continuous
 # from gym import wrappers
-from agents.monitor import Monitor
+from src.agents.monitor import Monitor
 
 
 class Agent(object):
@@ -23,12 +23,12 @@ def main():
     parser.add_argument('--env_id', nargs='?', default='Berzerk-v0', help='Select the environment to run')
     args = parser.parse_args()
 
-    record = True
-    continuous = False
+    record = False
+    continuous = True
     # env_name = 'CartPole-v0'
-    env_name = 'Pendulum-v0'
-    # env_name = 'MountainCarContinuous-v0'
-    # env_name = 'LunarLander-v2'
+    # env_name = 'Pendulum-v0'
+    env_name = 'MountainCarContinuous-v0'
+    # env_name = 'LunarLanderContinuous-v2'
 
     steps_for_env = {'CartPole-v0': 25, 'MountainCarContinuous-v0': 200, 'Pendulum-v0': 25, 'LunarLander-v2': 50}
 
@@ -62,11 +62,13 @@ def main():
         state = np.reshape(state, [1, state_size])
 
         while not done:
-            if i > 200:
+            if i > 100 and i % 20 == 0:
                 env.render()
 
             num_steps += 1
             action = agent.get_action(state)
+            if continuous:
+                action = action.reshape((action.shape[1],))
             if record:
                 next_state, reward, done, info = env.step(state, action)
             else:
