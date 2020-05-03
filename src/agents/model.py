@@ -15,16 +15,19 @@ class TrainingSystem:
         self.env_name = env_name
         self.reward_model = RewardModel
         self.use_reward_model = use_reward_model
+        self.record = record
+
+    def init_ai(self):
         cont_for_env = {'CartPole-v0': False, 'MountainCarContinuous-v0': True, 'Pendulum-v0': True,
-                             'LunarLander-v2': False}
+                        'LunarLander-v2': False}
         steps_for_env = {'CartPole-v0': 25, 'MountainCarContinuous-v0': 200, 'Pendulum-v0': 25, 'LunarLander-v2': 50}
         self.continuous = cont_for_env[self.env_name]
         self.env = env = gym.make(self.env_name)
 
-        if record:
-            self.env = Monitor(env, 'recordings/'+self.env_name, max_segments=100, max_steps=steps_for_env[
+        if self.record:
+            self.env = Monitor(env, 'recordings/' + self.env_name, max_segments=100, max_steps=steps_for_env[
                 self.env_name],
-                          video_callable=lambda episode_id: episode_id % 10 == 0, force=True)
+                               video_callable=lambda episode_id: episode_id % 10 == 0, force=True)
         self.scores, self.i, self.average, self.max_score, self.num_steps = [], 0, 0, float('-inf'), 0
         self.state_size = env.observation_space.shape[0]
 
@@ -62,7 +65,8 @@ class TrainingSystem:
             pref_db = json.load(f)
             return pref_db if len(pref_db) > 0 else None
 
-    def play(self, record=False):
+    def play(self):
+        self.init_ai()
         parser = argparse.ArgumentParser(description=None)
         parser.add_argument('--env_id', nargs='?', default='Berzerk-v0', help='Select the environment to run')
         args = parser.parse_args()
@@ -81,7 +85,7 @@ class TrainingSystem:
                 action = self.agent.get_action(state)
                 if self.continuous:
                     action = action.reshape((action.shape[1],))
-                if record:
+                if self.record:
                     next_state, reward, done, info = self.env.step(state, action)
                 else:
                     next_state, reward, done, info = self.env.step(action)

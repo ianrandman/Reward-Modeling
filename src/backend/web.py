@@ -2,8 +2,9 @@ from flask import Flask, render_template
 from flask import request
 import json
 import threading
+import time
 
-last_feedback_time = None
+last_feedback_time = time.time()
 
 def synchronized(func):
     func.__lock__ = threading.Lock()
@@ -79,6 +80,8 @@ def get_webapp(trajectory_builder, env_lst):
 
     @app.route('/preference', methods=['POST'])
     def update_text():
+        global last_feedback_time
+        last_feedback_time = time.time()
         user_pref = request.json
         env = user_pref["env"]
         del user_pref['env']
