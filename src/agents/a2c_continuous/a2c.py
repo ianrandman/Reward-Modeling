@@ -25,12 +25,14 @@ class A2C_Continuous:
 
         self.accumulated_steps = 0
         self.accumulated_steps = []
-        self.max_steps = 10
+        self.max_steps = 25
+
+        self.rewards = []
 
         # These are hyper parameters for the Policy Gradient
         self.discount_factor = 0.99
-        self.actor_lr = 0.001
-        self.critic_lr = 0.005
+        self.actor_lr = 0.01
+        self.critic_lr = 0.05
 
         # create model for policy network
         self.actor = self.build_actor()
@@ -70,7 +72,7 @@ class A2C_Continuous:
         mu = mu_sigma[0]
         sigma = mu_sigma[1]
         dist = tf.contrib.distributions.Normal(mu, sigma)
-        return dist.sample(1)
+        return tf.clip_by_value(dist.sample(1), -1, 1)
 
         # actions = list()
         # for m, s in zip(mu, sigma):
@@ -87,14 +89,12 @@ class A2C_Continuous:
     # actor: state is input and probability of each action is output of model
     def build_actor(self):
         input = Input(shape=(self.state_size,))
-        hidden = Dense(24, input_dim=self.state_size, activation='relu', kernel_initializer='he_uniform')(input)
+        hidden = Dense(24, input_dim=self.state_size, activation='relu', kernel_initializer='he_uniform', kernel_regularizer='l1')(input)
+        # hidden = Dense(50, input_dim=self.state_size, activation='relu', kernel_initializer='he_uniform', kernel_regularizer='l1')(hidden)
         mu = Dense(self.action_size, name='mu', activation='tanh', kernel_initializer='he_uniform')(hidden)
         sigma = Dense(self.action_size, name='sigma', activation='softplus', kernel_initializer='he_uniform')(hidden)
         actions = Lambda(self.sample_dist)([mu, sigma])
         actor = Model(inputs=input, outputs=actions)
-
-        mu_model = Model(inputs=actor.input, outputs=actor.get_layer('mu').output)
-        sigma_model = Model(inputs=actor.input, outputs=actor.get_layer('sigma').output)
 
         actor.summary()
         actor.compile(loss=self.actor_loss_wrapper(mu, sigma),
@@ -104,10 +104,9 @@ class A2C_Continuous:
     # critic: state is input and value of state is output of model
     def build_critic(self):
         critic = Sequential()
-        critic.add(Dense(50, input_dim=self.state_size, activation='relu',
-                         kernel_initializer='he_uniform'))
-        critic.add(Dense(1, activation='linear',
-                         kernel_initializer='he_uniform'))
+        critic.add(Dense(50, input_dim=self.state_size, activation='relu', kernel_initializer='he_uniform', kernel_regularizer='l1'))
+        # critic.add(Dense(50, input_dim=self.state_size, activation='relu', kernel_initializer='he_uniform', kernel_regularizer='l1'))
+        critic.add(Dense(1, activation='linear', kernel_initializer='he_uniform'))
         critic.summary()
         critic.compile(loss="mse", optimizer=Adam(lr=self.critic_lr))
         return critic
@@ -123,6 +122,11 @@ class A2C_Continuous:
 
     # update policy network every episode
     def train_model(self, state, action, reward, next_state, done):
+        # self.rewards.append(reward)
+        # reward = (reward - np.mean(self.rewards)) / (np.std(self.rewards) + np.finfo(np.float32).eps.item())
+        # if done:
+        #     self.rewards = []
+
         self.accumulated_steps.append((state, action, reward))
 
         # only update model after max_steps
@@ -132,6 +136,11 @@ class A2C_Continuous:
         states = [step[0] for step in self.accumulated_steps]
         actions = [step[1] for step in self.accumulated_steps]
         rewards = [step[2] for step in self.accumulated_steps]
+
+        rewards_mean = np.mean(rewards)
+        rewards_std = np.std(rewards)
+        eps = np.finfo(np.float32).eps.item()
+        rewards = [(reward - rewards_mean) / (rewards_std + eps) for reward in rewards]
 
         v_hats = [self.critic.predict(state)[0] for state in states]
         v_actuals = []
