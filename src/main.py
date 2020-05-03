@@ -11,7 +11,8 @@ def main():
 
     # start up the flask backend api
     app = web.get_webapp(trajectory_builder, env_lst)
-    threading.Thread(target=app.run(host='0.0.0.0', port=5000)).start()
+    threading.Thread(target=app.run, args=['0.0.0.0', 5000]).start()
+    print('wassup')
 
     # start up a2c reward model system
 

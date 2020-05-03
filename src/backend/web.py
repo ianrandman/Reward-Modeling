@@ -14,24 +14,25 @@ def synchronized(func):
 
 
 @synchronized
-def checkpoint():
-    save_pref_db()
+def begin_save(pref_db, env):
+    threading.Thread(target=save_pref_db, args=[pref_db, env]).start()
 
 
 @synchronized
 def add_pref(pref, prefs):
     prefs.append(pref)
 
-
 @synchronized
 def save_pref_db(pref_db, env):
-    with open("preferences/"+env+'/pref_db.json', 'w') as json_file:
-        json.dump(pref_db, json_file)
+    with open("preferences/"+env+'/pref_db.json', 'r') as json_file:
+        old_pref_db = json.load(json_file)
+        with open("preferences/" + env + '/pref_db.json', 'w') as json_file:
+            old_pref_db.extend(pref_db)
+            json.dump(old_pref_db, json_file)
 
 
 def get_pref_db(env):
-    with open("preferences/"+env+"/pref_db.json") as f:
-        f = open("preferences/" + env + "/pref_db.json")
+    with open("preferences/"+env+"/pref_db.json", 'r') as f:
         pref_db = json.load(f)
         return pref_db if len(pref_db) > 0 else None
 
@@ -44,7 +45,7 @@ def get_webapp(trajectory_builder, env_lst):
         pref_db = get_pref_db(env)
         if pref_db is None:
             pref_db = []
-            db_for_env[env] = pref_db
+        db_for_env[env] = pref_db
     #
     #
     #
@@ -83,8 +84,9 @@ def get_webapp(trajectory_builder, env_lst):
 
         pref_db = db_for_env[env]
         pref_db.append(user_pref)
-        if len(pref_db) % 10 == 0:
-            threading.Thread(target=save_pref_db(pref_db, env)).start()
+        if len(pref_db) % 3 == 0:
+            begin_save(pref_db, env)
+            db_for_env[env] = []
 
         return get_pair(env)
 
