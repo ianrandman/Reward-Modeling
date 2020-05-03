@@ -152,7 +152,8 @@ class Monitor(Wrapper):
     def _before_step(self, state, action):
         if not self.enabled: return
 
-        self.state_actions.append({'state': state[0].tolist(), 'action': action})
+        actions = [action] if type(action) == int else np.reshape(action, (action.shape[0],)).tolist()
+        self.state_actions.append({'state': state[0].tolist(), 'actions': actions})
         #self.stats_recorder.before_step(action)
 
     def _clean_files(self):
