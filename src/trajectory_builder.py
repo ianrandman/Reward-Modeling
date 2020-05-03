@@ -4,6 +4,7 @@ import json
 import random
 from base64 import b64encode
 from flask import jsonify
+from agents.a2c.a2c import A2C as RewardModel  # TODO change this to the reward model
 
 
 class TrajectoryBuilder:
@@ -17,7 +18,7 @@ class TrajectoryBuilder:
         with open(filepath, "rb") as f:
             return b64encode(f.read()).decode('utf-8')
 
-    def get_variance(self, seg1, seg2):
+    def get_variance(self, seg1, seg2, ensemble_size=3):
         return random.randint(0, 100)
 
     def get_metadata(self):

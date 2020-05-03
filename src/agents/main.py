@@ -7,15 +7,16 @@ from a2c_continuous.a2c import A2C_Continuous
 from src.agents.monitor import Monitor
 
 
-class Agent(object):
-    """The world's simplest agents!"""
+class Ensemble(object):
+    def __init__(self, ensemble_size=3):
+        self.ensemble_size = ensemble_size
+        self.models = ensemble_size * [A2C(state_size=1, action_size=1)]  # TODO change to RewardModel
+        # TODO are these linked to the current "reward model" instead of freshly created?
 
-    def __init__(self, action_space):
-        self.action_space = action_space
-
-    # You should modify this function
-    def act(self, observation, reward, done):
-        return self.action_space.sample()
+    def get_variance(self, seg1, seg2):
+        """Given 2 sequences, feed them into the ensemble and get the variance"""
+        seg1_rewards = [sum([model.predict(oa_pair) for oa_pair in seg1]) for model in self.models]
+        seg2_rewards = [sum([model.predict(oa_pair) for oa_pair in seg2]) for model in self.models]
 
 
 def main():
@@ -23,16 +24,16 @@ def main():
     parser.add_argument('--env_id', nargs='?', default='Berzerk-v0', help='Select the environment to run')
     args = parser.parse_args()
 
-    record = False
-    continuous = True
+    record = True
     # env_name = 'CartPole-v0'
-    # env_name = 'Pendulum-v0'
-    env_name = 'MountainCarContinuous-v0'
+    env_name = 'Pendulum-v0'
+    # env_name = 'MountainCarContinuous-v0'
     # env_name = 'LunarLanderContinuous-v2'
 
     cont_for_env = {'CartPole-v0': False, 'MountainCarContinuous-v0': True, 'Pendulum-v0': True,
-                    'LunarLander-v2': False}
-    steps_for_env = {'CartPole-v0': 25, 'MountainCarContinuous-v0': 200, 'Pendulum-v0': 25, 'LunarLander-v2': 50}
+                    'LunarLander-v2': False, 'LunarLanderContinuous-v2': True}
+    steps_for_env = {'CartPole-v0': 25, 'MountainCarContinuous-v0': 200, 'Pendulum-v0': 50,
+                     'LunarLander-v2': 50, 'LunarLanderContinuous-v2': 50}
     continuous = cont_for_env[env_name]
 
     env = gym.make(env_name)
