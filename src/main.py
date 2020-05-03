@@ -5,7 +5,7 @@ from agents.model import TrainingSystem
 
 
 def main():
-    env_lst = ['CartPole-v0', 'MountainCarContinuous-v0', 'Pendulum-v0', 'LunarLander-v2']
+    env_lst = ['CartPole-v0', 'MountainCarContinuous-v0', 'Pendulum-v0', 'LunarLanderContinuous-v2']
     # create the trajectory builder
     trajectory_builder = TrajectoryBuilder()
 

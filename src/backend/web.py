@@ -65,6 +65,14 @@ def get_webapp(trajectory_builder, env_lst):
     @app.route("/")
     def main():
         return render_template('index.html')
+
+    @app.route("/lunarlander")
+    def lunar_lander():
+        return render_template('env.html', env_name="LunarLanderContinuous-v2")
+
+    @app.route("/pendulum")
+    def pendulum():
+        return render_template('env.html', env_name="Pendulum-v0")
     #
     #
     #
