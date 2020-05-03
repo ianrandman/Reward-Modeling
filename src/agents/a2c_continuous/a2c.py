@@ -1,12 +1,20 @@
 import numpy as np
+import keras.backend as K
 
-from keras.layers import Dense
+from keras.layers import Input, Dense, Lambda
 
 from keras.optimizers import Adam
-from keras.models import Sequential
+from keras.models import Model, Sequential
+import math
+
+from scipy.stats import norm
+
+import tensorflow as tf
+
+K.clear_session()
 
 # A2C(Advantage Actor-Critic) agent for the Cartpole
-class A2C:
+class A2C_Continuous:
     def __init__(self, state_size, action_size):
         # if you want to see Cartpole learning, then change to True
         self.render = True
@@ -17,7 +25,7 @@ class A2C:
 
         self.accumulated_steps = 0
         self.accumulated_steps = []
-        self.max_steps = 1
+        self.max_steps = 10
 
         # These are hyper parameters for the Policy Gradient
         self.discount_factor = 0.99
@@ -32,17 +40,64 @@ class A2C:
             self.actor.load_weights("./save_model/cartpole_actor.h5")
             self.critic.load_weights("./save_model/cartpole_critic.h5")
 
+    def tensor_pdf(self, mu, sigma, x):
+        # math.exp(-0.5 * (x - mu) ** 2 / sigma ** 2) / (sigma * (2 * math.pi ** 2)**0.5)
+        exp_first = tf.math.multiply(tf.constant(-0.5), tf.math.square(x - mu))
+        top = tf.math.exp(tf.math.divide(exp_first, tf.math.square(sigma)))
+        bottom = tf.math.multiply(tf.constant((2 * math.pi) ** 0.5), sigma)
+        return tf.math.divide(top, bottom)
+
+    def actor_loss_wrapper(self, mu, sigma):
+        # predicted = [state, advantage]
+        # predicted = advantage
+        def actor_loss(advantage, predicted_action):
+
+            # mu_val = mu.predict(predicted[0])
+            # sigma_val = sigma.predict(predicted[0])
+            # advantage = predicted[1]
+            # return -np.log(pdf) * advantage
+
+            pdf = self.tensor_pdf(mu, sigma, predicted_action)
+
+            return -1 * tf.math.log(pdf) * advantage
+
+            # return dist.pdf(1)
+
+
+        return actor_loss
+
+    def sample_dist(self, mu_sigma):
+        mu = mu_sigma[0]
+        sigma = mu_sigma[1]
+        dist = tf.contrib.distributions.Normal(mu, sigma)
+        return tf.clip_by_value(dist.sample(1), -2, 2)  # TODO change min max
+
+        # actions = list()
+        # for m, s in zip(mu, sigma):
+        #     actions.append(np.clip(np.random.normal(m, s), -2, 2))
+        #
+        # return actions
+        #
+        # x=1
+        # return mu
+        # return np.array([])
+        #lambda mean, std: np.clip(np.random.normal(mean, std), -2, 2)
+
     # approximate policy and value using Neural Network
     # actor: state is input and probability of each action is output of model
     def build_actor(self):
-        actor = Sequential()
-        actor.add(Dense(24, input_dim=self.state_size, activation='relu',
-                        kernel_initializer='he_uniform'))
-        actor.add(Dense(self.action_size, activation='softmax',
-                        kernel_initializer='he_uniform'))
+        input = Input(shape=(self.state_size,))
+        hidden = Dense(24, input_dim=self.state_size, activation='relu', kernel_initializer='he_uniform')(input)
+        mu = Dense(self.action_size, name='mu', activation='tanh', kernel_initializer='he_uniform')(hidden)
+        sigma = Dense(self.action_size, name='sigma', activation='softplus', kernel_initializer='he_uniform')(hidden)
+        actions = Lambda(self.sample_dist)([mu, sigma])
+        actor = Model(inputs=input, outputs=actions)
+
+        mu_model = Model(inputs=actor.input, outputs=actor.get_layer('mu').output)
+        sigma_model = Model(inputs=actor.input, outputs=actor.get_layer('sigma').output)
+
         actor.summary()
-        # See note regarding crossentropy in cartpole_reinforce.py
-        actor.compile(loss='categorical_crossentropy',
+        actor.compile(loss=self.actor_loss_wrapper(mu, sigma),
                       optimizer=Adam(lr=self.actor_lr))
         return actor
 
@@ -57,11 +112,14 @@ class A2C:
         critic.compile(loss="mse", optimizer=Adam(lr=self.critic_lr))
         return critic
 
-    # using the output of policy network, pick action stochastically
     def get_action(self, state):
-        policy = self.actor.predict(state, batch_size=1).flatten()
-        # policy = [0.3, 0.4, 0.3]
-        return np.random.choice(self.action_size, p=policy)
+        return self.actor.predict(np.reshape(state, [1, self.state_size]))[0]
+
+        # mu, sigma = self.actor.predict(np.reshape(state, [1, self.state_size]))
+        # epsilon = np.random.randn(self.action_size)
+        # action = mu + sigma * epsilon
+        # action = np.clip(action, -2, 2)
+        # return action
 
     # update policy network every episode
     def train_model(self, state, action, reward, next_state, done):
@@ -90,12 +148,8 @@ class A2C:
         advantages = np.subtract(v_actuals, v_hats[:-1])
         critic_target = v_actuals
 
-        actor_target = np.zeros((len(self.accumulated_steps)-1, self.action_size))
-        for i, x in enumerate(actions[:-1]):
-            actor_target[i][x] = advantages[i]
-
         states = np.array([state[0] for state in states[:-1]])
-        actor_target = np.array(actor_target)
+        actor_target = np.array(advantages)
         critic_target = np.array(critic_target)
         self.critic.fit(states, critic_target, epochs=1, verbose=0)
         self.actor.fit(states, actor_target, epochs=1, verbose=0)
