@@ -12,12 +12,18 @@ $(document).ready(function(){
 
 function update_sequences(data) {
     console.log("updating sequences");
-    sequence1 = JSON.parse(data).seq1;
-    sequence2 = JSON.parse(data).seq2;
-    var traj1 = "data:video/mp4;base64,"+sequence1.vid;
-    var traj2 = "data:video/mp4;base64,"+sequence2.vid;
-    $("#trajL").attr("src", traj1);
-    $("#trajR").attr("src", traj2);
+
+    data = JSON.parse(data);
+    if(typeof data.error !== 'undefined') {
+        alert(data.error);
+    } else {
+        sequence1 = data.seq1;
+        sequence2 = data.seq2;
+        var traj1 = "data:video/mp4;base64," + sequence1.vid;
+        var traj2 = "data:video/mp4;base64," + sequence2.vid;
+        $("#trajL").attr("src", traj1);
+        $("#trajR").attr("src", traj2);
+    }
 }
 
 function get_pair() {
@@ -26,7 +32,7 @@ $.get( "/getpair?env="+env, function(data) {
         update_sequences(data);
     })
     .fail(function(error) {
-        alert( error );
+        alert( "ERROR" );
     })
 }
 
@@ -36,7 +42,7 @@ function no_response_checker() {
         diff = Date.now() - last_response;
         console.log("Its been some time, diff: "+diff);
         if(diff > 1999) {
-            alert("The server stopped responding!");
+            alert("The server took too long to respond!");
         }
     }, 2000);
 }
