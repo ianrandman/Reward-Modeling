@@ -1,6 +1,7 @@
 from backend import web
 from trajectory_builder import TrajectoryBuilder
 import threading
+from agents.model import TrainingSystem
 
 
 def main():
@@ -12,9 +13,11 @@ def main():
     # start up the flask backend api
     app = web.get_webapp(trajectory_builder, env_lst)
     threading.Thread(target=app.run, args=['0.0.0.0', 5000]).start()
-    print('wassup')
 
-    # before we
+    training_system = TrainingSystem(env_lst[1])
+    threading.Thread(target=training_system.pretrain_model(), args=[True]).start()
+    threading.Thread(target=training_system.play, args=[True]).start()
+
 
 
 if __name__ == "__main__":

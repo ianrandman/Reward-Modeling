@@ -27,8 +27,6 @@ class A2C_Continuous:
         self.accumulated_steps = []
         self.max_steps = 25
 
-        self.rewards = []
-
         # These are hyper parameters for the Policy Gradient
         self.discount_factor = 0.99
         self.actor_lr = 0.01
@@ -50,22 +48,9 @@ class A2C_Continuous:
         return tf.math.divide(top, bottom)
 
     def actor_loss_wrapper(self, mu, sigma):
-        # predicted = [state, advantage]
-        # predicted = advantage
         def actor_loss(advantage, predicted_action):
-
-            # mu_val = mu.predict(predicted[0])
-            # sigma_val = sigma.predict(predicted[0])
-            # advantage = predicted[1]
-            # return -np.log(pdf) * advantage
-
             pdf = self.tensor_pdf(mu, sigma, predicted_action)
-
             return -1 * tf.math.log(pdf) * advantage
-
-            # return dist.pdf(1)
-
-
         return actor_loss
 
     def sample_dist(self, mu_sigma):
@@ -73,17 +58,6 @@ class A2C_Continuous:
         sigma = mu_sigma[1]
         dist = tf.contrib.distributions.Normal(mu, sigma)
         return tf.clip_by_value(dist.sample(1), -1, 1)
-
-        # actions = list()
-        # for m, s in zip(mu, sigma):
-        #     actions.append(np.clip(np.random.normal(m, s), -2, 2))
-        #
-        # return actions
-        #
-        # x=1
-        # return mu
-        # return np.array([])
-        #lambda mean, std: np.clip(np.random.normal(mean, std), -2, 2)
 
     # approximate policy and value using Neural Network
     # actor: state is input and probability of each action is output of model
@@ -122,11 +96,6 @@ class A2C_Continuous:
 
     # update policy network every episode
     def train_model(self, state, action, reward, next_state, done):
-        # self.rewards.append(reward)
-        # reward = (reward - np.mean(self.rewards)) / (np.std(self.rewards) + np.finfo(np.float32).eps.item())
-        # if done:
-        #     self.rewards = []
-
         self.accumulated_steps.append((state, action, reward))
 
         # only update model after max_steps

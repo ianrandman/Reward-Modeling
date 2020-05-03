@@ -3,6 +3,7 @@ from flask import request
 import json
 import threading
 
+last_feedback_time = None
 
 def synchronized(func):
     func.__lock__ = threading.Lock()

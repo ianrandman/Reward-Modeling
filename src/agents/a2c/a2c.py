@@ -75,6 +75,11 @@ class A2C:
         actions = [step[1] for step in self.accumulated_steps]
         rewards = [step[2] for step in self.accumulated_steps]
 
+        rewards_mean = np.mean(rewards)
+        rewards_std = np.std(rewards)
+        eps = np.finfo(np.float32).eps.item()
+        rewards = [(reward - rewards_mean) / (rewards_std + eps) for reward in rewards]
+
         v_hats = [self.critic.predict(state)[0] for state in states]
         v_actuals = []
 
