@@ -24,22 +24,13 @@ def main():
     args = parser.parse_args()
 
     record = True
-    continuous = False
     # env_name = 'CartPole-v0'
-    env_name = 'Pendulum-v0'
-    # env_name = 'MountainCarContinuous-v0'
+    # env_name = 'Pendulum-v0'
+    env_name = 'MountainCarContinuous-v0'
     # env_name = 'LunarLander-v2'
-
+    cont_for_env = {'CartPole-v0': False, 'MountainCarContinuous-v0': True, 'Pendulum-v0': True, 'LunarLander-v2': False}
     steps_for_env = {'CartPole-v0': 25, 'MountainCarContinuous-v0': 200, 'Pendulum-v0': 25, 'LunarLander-v2': 50}
-
-    # You provide the directory to write to (can be an existing
-    # directory, including one with existing data -- all monitor files
-    # will be namespaced). You can also dump to a tempdir if you'd
-    # like: tempfile.mkdtemp().
-    outdir = 'random-agents-results'
-
-    # env.seed(0)
-    # agents = Agent(env.action_space)
+    continuous = cont_for_env[env_name]
 
     env = gym.make(env_name)
     if record:
