@@ -70,7 +70,7 @@ class A2C_Continuous:
         mu = mu_sigma[0]
         sigma = mu_sigma[1]
         dist = tf.contrib.distributions.Normal(mu, sigma)
-        return tf.clip_by_value(dist.sample(1), -2, 2)  # TODO change min max
+        return dist.sample(1)
 
         # actions = list()
         # for m, s in zip(mu, sigma):

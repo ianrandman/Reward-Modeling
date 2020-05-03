@@ -26,11 +26,11 @@ class TrajectoryBuilder:
         """
         return {}
 
-    def get_pair(self, sample_size=20):
+    def get_pair(self, env, sample_size=20):
         """
         :return: the binary of two video files for the user to compare
         """
-        dir_path = path.dirname(path.abspath(__file__)) + "/agents/temp/experiment_1/"
+        dir_path = path.dirname(path.abspath(__file__)) + "/agents/recordings/"+env+"/"
         filenames = [f for f in listdir(dir_path) if f[-4:] == 'json' and isfile(join(dir_path, f))]
         filenames.sort(key=path.basename)  # sort list of names
         filenames = filenames[:-1]

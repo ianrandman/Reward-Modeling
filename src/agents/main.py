@@ -23,10 +23,14 @@ def main():
     parser.add_argument('--env_id', nargs='?', default='Berzerk-v0', help='Select the environment to run')
     args = parser.parse_args()
 
-    record = False
+    record = True
+    continuous = False
     # env_name = 'CartPole-v0'
-    # env_name = 'Pendulum-v0'
-    env_name = 'MountainCarContinuous-v0'
+    env_name = 'Pendulum-v0'
+    # env_name = 'MountainCarContinuous-v0'
+    # env_name = 'LunarLander-v2'
+
+    steps_for_env = {'CartPole-v0': 25, 'MountainCarContinuous-v0': 200, 'Pendulum-v0': 25, 'LunarLander-v2': 50}
 
     # You provide the directory to write to (can be an existing
     # directory, including one with existing data -- all monitor files
@@ -38,16 +42,19 @@ def main():
     # agents = Agent(env.action_space)
 
     env = gym.make(env_name)
-    # if record:
-    #     env = Monitor(env, 'temp/experiment_1',max_segments=100, max_steps=20,
-    #                   video_callable=lambda episode_id: episode_id% 10 == 0, force=True)
+    if record:
+        env = Monitor(env, 'recordings/'+env_name, max_segments=100, max_steps=steps_for_env[env_name],
+                      video_callable=lambda episode_id: episode_id % 10 == 0, force=True)
     scores, i, average, max_score, num_steps = [], 0, 0, float('-inf'), 0
-
     state_size = env.observation_space.shape[0]
-    # action_dim = env.action_space.n
-    action_dim = env.action_space.shape[0]
-    # agent = A2C(state_size=state_size, action_size=action_dim)
-    agent = A2C_Continuous(state_size=state_size, action_size=action_dim)
+
+    if continuous:
+        action_dim = env.action_space.shape[0]
+        agent = A2C_Continuous(state_size=state_size, action_size=action_dim)
+    else:
+        action_dim = env.action_space.n
+        agent = A2C(state_size=state_size, action_size=action_dim)
+
     while True:
         done = False
         score = 0
@@ -60,7 +67,10 @@ def main():
 
             num_steps += 1
             action = agent.get_action(state)
-            next_state, reward, done, info = env.step(action)
+            if record:
+                next_state, reward, done, info = env.step(state, action)
+            else:
+                next_state, reward, done, info = env.step(action)
             next_state = np.reshape(next_state, [1, state_size])
             # if an action make the episode end, then gives penalty of -100
             # reward = reward if not done or score == 499 else -100

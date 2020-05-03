@@ -1,10 +1,13 @@
 let DOMAIN = window.location.protocol + "//" + window.location.host;
 
+var date = new Date();
 let sequence1;
 let sequence2;
+let last_response = date.getTime();  // unix timestamp in milliseconds
 
 $(document).ready(function(){
     get_pair();
+    console.log(last_response);
  });
 
 
@@ -20,7 +23,7 @@ function update_sequences(data) {
 
 function get_pair() {
     console.log("getting a new pair");
-$.get( "/getpair", function(data) {
+$.get( "/getpair?env="+env, function(data) {
         update_sequences(data);
     })
     .fail(function(error) {
@@ -28,8 +31,12 @@ $.get( "/getpair", function(data) {
     })
 }
 
+function no_response_checker() {
+    
+}
+
 function send_preference(pref) {
-    console.log("sending pref");
+    no_response_checker();
     $.ajax({
     type: "POST",
     url: "/preference",
@@ -38,6 +45,7 @@ function send_preference(pref) {
     contentType: "application/json; charset=utf-8",
     success: function(data){update_sequences(data);},
     failure: function(errMsg) {
+        console.log("failed to send preference");
         get_pair();
     }
 });
