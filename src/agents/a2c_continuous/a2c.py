@@ -11,6 +11,8 @@ from scipy.stats import norm
 
 import tensorflow as tf
 
+K.clear_session()
+
 # A2C(Advantage Actor-Critic) agent for the Cartpole
 class A2C_Continuous:
     def __init__(self, state_size, action_size):
