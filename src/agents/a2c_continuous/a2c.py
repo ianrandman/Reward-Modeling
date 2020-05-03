@@ -11,8 +11,6 @@ from scipy.stats import norm
 
 import tensorflow as tf
 
-K.clear_session()
-
 # A2C(Advantage Actor-Critic) agent for the Cartpole
 class A2C_Continuous:
     def __init__(self, state_size, action_size):
@@ -26,8 +24,6 @@ class A2C_Continuous:
         self.accumulated_steps = 0
         self.accumulated_steps = []
         self.max_steps = 25
-
-        self.rewards = []
 
         # These are hyper parameters for the Policy Gradient
         self.discount_factor = 0.99
@@ -122,11 +118,6 @@ class A2C_Continuous:
 
     # update policy network every episode
     def train_model(self, state, action, reward, next_state, done):
-        # self.rewards.append(reward)
-        # reward = (reward - np.mean(self.rewards)) / (np.std(self.rewards) + np.finfo(np.float32).eps.item())
-        # if done:
-        #     self.rewards = []
-
         self.accumulated_steps.append((state, action, reward))
 
         # only update model after max_steps
