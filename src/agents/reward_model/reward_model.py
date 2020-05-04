@@ -19,12 +19,16 @@ class Ensemble:
         seg_1s = [[x['state'], x['actions']] for x in seg1_dirty]
         seg_2s = [[x['state'], x['actions']] for x in seg2_dirty]
 
-        act = []
-        obs = []
+        act1 = []
+        obs1 = []
+        act2 = []
+        obs2 = []
         for step1, step2 in zip(seg_1s, seg_2s):
-            act.append([step1[1], step2[1]])
-            obs.append([step1[0], step2[0]])
-        inputs = [[obs], [act]]
+            act1.append(step1[1])
+            act2.append(step2[1])
+            obs1.append(step1[0])
+            obs2.append(step2[0])
+        inputs = [[[obs1, obs2]], [[act1, act2]]]
 
 
         prefer_1 = []
@@ -102,8 +106,8 @@ class RewardModel:
 
         seg_rewards = Reshape([2, self.num_steps])(z)
 
-        p_1_over_2 = Lambda(self.probability_lambda)(seg_rewards)
-        p_2_over_1 = Lambda(self.probability_lambda_reverse)(seg_rewards)
+        p_1_over_2 = Lambda(self.probability_lambda, name='first_lambda')(seg_rewards)
+        p_2_over_1 = Lambda(self.probability_lambda_reverse, name='second_lambda')(seg_rewards)
 
         training_model = Model(inputs=[states_input, actions_input], outputs=[p_1_over_2, p_2_over_1])
 
@@ -144,13 +148,17 @@ class RewardModel:
         act = []
         obs = []
         for seg1, seg2 in zip(seg_1s, seg_2s):
-            act_seg = []
-            obs_seg = []
+            act1 = []
+            obs1 = []
+            act2 = []
+            obs2 = []
             for step1, step2 in zip(seg1, seg2):
-                act_seg.append([step1[1], step2[1]])
-                obs_seg.append([step1[0], step2[0]])
-            act.append(act_seg)
-            obs.append(obs_seg)
+                act1.append(step1[1])
+                act2.append(step2[1])
+                obs1.append(step1[0])
+                obs2.append(step2[0])
+            act.append([act1, act2])
+            obs.append([obs1, obs2])
 
         prefs = [triple['p'] for triple in pref_db]
 
@@ -160,3 +168,5 @@ class RewardModel:
         targets = [prefs, np.zeros((len(prefs),))]
 
         self.training_model.fit(inputs, targets, epochs=50, batch_size=30, verbose=0)
+
+        K.clear_session()

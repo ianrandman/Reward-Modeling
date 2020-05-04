@@ -19,10 +19,10 @@ class TrajectoryBuilder:
             return b64encode(f.read()).decode('utf-8')
 
     def get_variance(self, seg1, seg2):
-        with futures.ThreadPoolExecutor(1) as executor:
-            variance_future = executor.submit(self.training_system.ensemble.get_variance, seg1, seg2)
-            return variance_future.result()
-        # return random.randint(0, 100)
+        # with futures.ThreadPoolExecutor(1) as executor:
+        #     variance_future = executor.submit(self.training_system.ensemble.get_variance, seg1, seg2)
+        #     return variance_future.result()
+        return random.randint(0, 100)
 
     def get_metadata(self):
         """
