@@ -9,6 +9,33 @@ from keras.models import Model
 import tensorflow as tf
 
 
+class Ensemble:
+    def __init__(self, state_size, action_size, num_steps, num_agents=3):
+        model = RewardModel(state_size, action_size, num_steps)
+        self.model = model
+        self.model_list = num_agents * [model.training_model]
+
+    def get_variance(self, seg1_dirty, seg2_dirty):
+        seg_1s = [[x['state'], x['actions']] for x in seg1_dirty]
+        seg_2s = [[x['state'], x['actions']] for x in seg2_dirty]
+
+        act = []
+        obs = []
+        for step1, step2 in zip(seg_1s, seg_2s):
+            act.append([step1[1], step2[1]])
+            obs.append([step1[0], step2[0]])
+        inputs = [[obs], [act]]
+
+
+        prefer_1 = []
+        prefer_2 = []
+        for model in self.model_list:
+            p_1_over_2, p_2_over_1 = model.predict(inputs)
+            prefer_1.append(p_1_over_2)
+            prefer_2.append(p_2_over_1)
+        return np.var(np.array(prefer_1)) + np.var(np.array(prefer_2))
+
+
 class RewardModel:
     def __init__(self, state_size, action_size, num_steps):
         self.load_model = False

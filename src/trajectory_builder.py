@@ -3,13 +3,13 @@ from os.path import isfile, join
 import json
 import random
 from base64 import b64encode
-from flask import jsonify
-from agents.a2c.a2c import A2C as RewardModel  # TODO change this to the reward model
+from concurrent import futures
 
 
 class TrajectoryBuilder:
-    def __init__(self):
+    def __init__(self, training_system):
         self.counter = 0
+        self.training_system = training_system
 
     def get_binary(self, filepath):
         """
@@ -18,8 +18,11 @@ class TrajectoryBuilder:
         with open(filepath, "rb") as f:
             return b64encode(f.read()).decode('utf-8')
 
-    def get_variance(self, seg1, seg2, ensemble_size=3):
-        return random.randint(0, 100)
+    def get_variance(self, seg1, seg2):
+        with futures.ThreadPoolExecutor(1) as executor:
+            variance_future = executor.submit(self.training_system.ensemble.get_variance, seg1, seg2)
+            return variance_future.result()
+        # return random.randint(0, 100)
 
     def get_metadata(self):
         """
