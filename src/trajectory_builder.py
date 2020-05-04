@@ -7,9 +7,10 @@ from concurrent import futures
 
 
 class TrajectoryBuilder:
-    def __init__(self, training_system):
+    # def __init__(self, training_system):
+    def __init__(self):
         self.counter = 0
-        self.training_system = training_system
+        # self.training_system = training_system
 
     def get_binary(self, filepath):
         """

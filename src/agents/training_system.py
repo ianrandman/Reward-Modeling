@@ -13,11 +13,12 @@ from os.path import isfile, join
 
 
 class TrainingSystem:
-    def __init__(self, env_name, record=True, use_reward_model=False):
+    def __init__(self, env_name, record=True, use_reward_model=False, load_model=False):
         self.env_name = env_name
         self.use_reward_model = use_reward_model
         self.record = record
         self. last_pull_time = None
+        self.load_model = load_model
 
     def __init_ai(self):
         cont_for_env = {'CartPole-v0': False, 'MountainCarContinuous-v0': True, 'Pendulum-v0': True,
@@ -36,12 +37,13 @@ class TrainingSystem:
         if self.continuous:
             action_dim = env.action_space.shape[0]
             action_high = env.action_space.high
-            self.agent = A2C_Continuous(state_size=self.state_size, action_size=action_dim, action_high=action_high)
+            self.agent = A2C_Continuous(state_size=self.state_size, action_size=action_dim, action_high=action_high,
+                                        load_model=self.load_model)
         else:
             action_dim = env.action_space.n
-            self.agent = A2C(state_size=self.state_size, action_size=action_dim)
+            self.agent = A2C(state_size=self.state_size, action_size=action_dim, load_model=self.load_model)
 
-        self.ensemble = Ensemble(self.state_size, action_dim, steps_for_env[self.env_name])
+        self.ensemble = Ensemble(self.state_size, action_dim, steps_for_env[self.env_name], load_model=self.load_model)
         self.reward_model = self.ensemble.model
 
     def predict_reward(self, state, action):
@@ -51,6 +53,7 @@ class TrainingSystem:
         pref_db = self.pull_pref_db()
         if pref_db is not None:
             self.reward_model.train_model(pref_db)
+            self.reward_model.save_model()
 
     def pull_pref_db(self):
         self.last_pull_time = time.time()
@@ -76,6 +79,9 @@ class TrainingSystem:
             score = 0
             state = self.env.reset()
             state = np.reshape(state, [1, self.state_size])
+
+            if self.i % 50 == 0:
+                self.agent.save_model()
 
             while not done:
                 if not self.record:

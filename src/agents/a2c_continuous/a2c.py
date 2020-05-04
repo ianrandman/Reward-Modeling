@@ -13,7 +13,7 @@ K.clear_session()
 
 
 class A2C_Continuous:
-    def __init__(self, state_size, action_size, action_high):
+    def __init__(self, state_size, action_size, action_high, load_model=False):
         # if you want to see Cartpole learning, then change to True
         self.render = True
         self.load_model = False
@@ -32,12 +32,16 @@ class A2C_Continuous:
         self.critic_lr = 0.05
 
         # create model for policy network
-        self.actor = self.build_actor()
-        self.critic = self.build_critic()
+        if load_model:
+            self.actor.load_weights("./save_model/a2c_discrete_actor.h5")
+            self.critic.load_weights("./save_model/a2c_discrete_critic.h5")
+        else:
+            self.actor = self.build_actor()
+            self.critic = self.build_critic()
 
-        if self.load_model:
-            self.actor.load_weights("./save_model/cartpole_actor.h5")
-            self.critic.load_weights("./save_model/cartpole_critic.h5")
+    def save_model(self):
+        self.actor.save_weights("./save_model/a2c_continuous_actor.h5")
+        self.critic.save_weights("./save_model/a2c_continuous_critic.h5")
 
     def tensor_pdf(self, mu, sigma, x):
         # math.exp(-0.5 * (x - mu) ** 2 / sigma ** 2) / (sigma * (2 * math.pi ** 2)**0.5)

@@ -10,8 +10,8 @@ import tensorflow as tf
 
 
 class Ensemble:
-    def __init__(self, state_size, action_size, num_steps, num_agents=3):
-        model = RewardModel(state_size, action_size, num_steps)
+    def __init__(self, state_size, action_size, num_steps, num_agents=3, load_model=False):
+        model = RewardModel(state_size, action_size, num_steps, load_model)
         self.model = model
         self.model_list = num_agents * [model.training_model]
 
@@ -41,7 +41,7 @@ class Ensemble:
 
 
 class RewardModel:
-    def __init__(self, state_size, action_size, num_steps):
+    def __init__(self, state_size, action_size, num_steps, load_model):
         self.load_model = False
 
         # get size of state and action
@@ -53,10 +53,15 @@ class RewardModel:
         self.lr = 0.001
 
         # create model
-        self.training_model, self.model = self.build_model()
+        if load_model:
+            self.training_model.load_weights("./save_model/reward_model_training.h5")
+            self.model.load_weights("./save_model/reward_model_mlp.h5")
+        else:
+            self.training_model, self.model = self.build_model()
 
-        if self.load_model:
-            self.model.load_weights('./save_model/cartpole_actor.h5')
+    def save_model(self):
+        self.training_model.save_weights("./save_model/reward_model_training.h5")
+        self.model.save_weights("./save_model/reward_model_mlp.h5")
 
     def probability_lambda(self, seg_rewards):
         seg_1_rewards = tf.gather(seg_rewards, 0)
