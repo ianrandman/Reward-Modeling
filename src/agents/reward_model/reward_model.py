@@ -1,7 +1,7 @@
 import numpy as np
 import keras.backend as K
 
-from keras.layers import Input, Dense, concatenate, Lambda
+from keras.layers import Input, Dense, concatenate, Lambda, Reshape
 
 from keras.optimizers import Adam
 from keras.models import Model, Sequential
@@ -50,8 +50,8 @@ class RewardModel:
     # def loss(self, seg1, seg2, pref):
     #     mu_1, mu_2 = self.mu_func(pref)
     #
-        -sum(mu_1*log(self.prob_seg_pref(seg1, seg2)) +
-             mu_2*log(self.prob_seg_pref(seg2, seg1)))
+        # -sum(mu_1*log(self.prob_seg_pref(seg1, seg2)) +
+        #      mu_2*log(self.prob_seg_pref(seg2, seg1)))
     #
 
     # def mu_func(self, pref):
@@ -96,12 +96,51 @@ class RewardModel:
         model = get_mlp()
 
         states_input = Input(shape=(2, self.num_steps, self.state_size,))
-        states_reshape = tf.reshape(states_input, [2*self.num_steps, self.state_size])
+        # states_reshape = tf.reshape(states_input, [2*self.num_steps, self.state_size])
+        states_reshape = Reshape([2*self.num_steps, self.state_size])(states_input)
         actions_input = Input(shape=(2, self.num_steps, self.action_size,))
-        actions_reshape = tf.reshape(states_input, [2*self.num_steps, self.action_size])
+        # actions_reshape = tf.reshape(actions_input, [2*self.num_steps, self.action_size])
+        actions_reshape = Reshape([2*self.num_steps, self.action_size])(actions_input)
+        reshape_model =
 
-        flat_rewards = model.predict(states_reshape, actions_reshape)
-        seg_rewards = tf.reshape(flat_rewards, [2, self.num_steps])
+        ######################
+
+        # state branch
+        x1 = Dense(64, activation='relu', kernel_regularizer='l1')(states_reshape)
+        x2 = Dense(32, activation='relu')(x1)
+        x3 = Dense(16, activation='relu')(x2)
+
+        x_inp = Input(shape=(self.state_size,))
+        x_model1 = x1(x_inp)
+        x_model2 = x2(x_model1)
+        x_model3 = x3(x_model2)
+        x_model_final = Model(inputs=x_inp, outputs=x_model3)
+
+        # action branch
+        y = Dense(16, activation='relu')(actions_reshape)
+        y = Dense(32, activation='relu', kernel_regularizer='l1')(y)
+        y = Dense(16, activation='relu')(y)
+
+        y_inp = Input(shape=(self.action_size,))
+        y = Model(inputs=actions_reshape, outputs=y)
+
+        # combine branches
+        combined = concatenate([x.output, y.output])
+
+        # learn after combination
+        z = Dense(8, activation='relu')(combined)
+        z = Dense(1, activation='tanh')(z)
+        # model = Model(inputs=[x.input, y.input], outputs=z)
+
+        ################
+
+        # state_input = Input(shape=(self.state_size,))
+        # action_input = Input(shape=(self.action_size,))
+
+        ###################
+
+        # flat_rewards = model.predict([states_reshape, actions_reshape])
+        seg_rewards = tf.reshape(z, [2, self.num_steps])
 
         seg_1_rewards = tf.gather(seg_rewards, 0)
         seg_2_rewards = tf.gather(seg_rewards, 1)
