@@ -4,7 +4,14 @@ import json
 import threading
 import time
 
-last_feedback_time = time.time()
+
+class LastFeedbackTime:
+    def __init__(self):
+        self.last_feedback_time = time.time()
+
+    def update_feedback_time(self):
+        self.last_feedback_time = time.time()
+
 
 def synchronized(func):
     func.__lock__ = threading.Lock()
@@ -39,7 +46,7 @@ def get_pref_db(env):
         return pref_db if len(pref_db) > 0 else None
 
 
-def get_webapp(trajectory_builder, env_lst):
+def get_webapp(trajectory_builder, env_lst, last_feedback_time):
     app = Flask(__name__)
 
     db_for_env = {}
@@ -88,8 +95,7 @@ def get_webapp(trajectory_builder, env_lst):
 
     @app.route('/preference', methods=['POST'])
     def update_text():
-        global last_feedback_time
-        last_feedback_time = time.time()
+        last_feedback_time.update_feedback_time()
         user_pref = request.json
         env = user_pref["env"]
         del user_pref['env']

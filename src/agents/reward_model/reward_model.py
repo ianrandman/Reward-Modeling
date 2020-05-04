@@ -162,6 +162,10 @@ class RewardModel:
                 act2.append(step2[1])
                 obs1.append(step1[0])
                 obs2.append(step2[0])
+            act1.extend(np.zeros((self.num_steps - len(act1), self.action_size)))
+            obs1.extend(np.zeros((self.num_steps - len(obs1), self.state_size)))
+            act2.extend(np.zeros((self.num_steps - len(act2), self.action_size)))
+            obs2.extend(np.zeros((self.num_steps - len(obs2), self.state_size)))
             act.append([act1, act2])
             obs.append([obs1, obs2])
 

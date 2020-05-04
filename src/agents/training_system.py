@@ -4,7 +4,7 @@ from src.agents.a2c.a2c import A2C
 from src.agents.a2c_continuous.a2c import A2C_Continuous
 from src.agents.reward_model.reward_model import Ensemble
 from src.agents.monitor import Monitor
-from backend.web import last_feedback_time
+from backend.web import LastFeedbackTime
 import json
 import time
 import os
@@ -13,17 +13,19 @@ from os.path import isfile, join
 
 
 class TrainingSystem:
-    def __init__(self, env_name, record=True, use_reward_model=False, load_model=False):
+    def __init__(self, env_name, last_feedback_time, record=True, use_reward_model=False, load_model=False):
         self.env_name = env_name
         self.use_reward_model = use_reward_model
         self.record = record
         self. last_pull_time = None
         self.load_model = load_model
+        self.last_feedback_time = last_feedback_time
 
     def __init_ai(self):
         cont_for_env = {'CartPole-v0': False, 'MountainCarContinuous-v0': True, 'Pendulum-v0': True,
-                        'LunarLander-v2': False}
-        steps_for_env = {'CartPole-v0': 25, 'MountainCarContinuous-v0': 200, 'Pendulum-v0': 25, 'LunarLander-v2': 50}
+                        'LunarLander-v2': False, 'LunarLanderContinuous-v2': True}
+        steps_for_env = {'CartPole-v0': 25, 'MountainCarContinuous-v0': 200, 'Pendulum-v0': 25, 'LunarLander-v2': 50,
+                         'LunarLanderContinuous-v2': 50}
         self.continuous = cont_for_env[self.env_name]
         self.env = env = gym.make(self.env_name)
         if self.record:
@@ -53,6 +55,7 @@ class TrainingSystem:
         return self.reward_model.get_reward(state, action)
 
     def train_reward_model(self):
+        print("Training reward model...")
         pref_db = self.pull_pref_db()
         if pref_db is not None:
             self.reward_model.train_model(pref_db)
@@ -74,7 +77,7 @@ class TrainingSystem:
         while True:
 
             # check if db has refreshed to retrain reward model
-            if self.use_reward_model and last_feedback_time > self.last_pull_time + 60:
+            if self.use_reward_model and self.last_feedback_time.last_feedback_time > self.last_pull_time + 90:
                 print("got some new feedback, retraining the model...")
                 self.train_reward_model()
 
