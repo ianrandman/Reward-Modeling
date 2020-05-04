@@ -43,7 +43,10 @@ class TrainingSystem:
             action_dim = env.action_space.n
             self.agent = A2C(state_size=self.state_size, action_size=action_dim, load_model=self.load_model)
 
-        self.ensemble = Ensemble(self.state_size, action_dim, steps_for_env[self.env_name], load_model=self.load_model)
+        if self.continuous:
+            self.ensemble = Ensemble(self.state_size, action_dim, steps_for_env[self.env_name], load_model=self.load_model)
+        else:
+            self.ensemble = Ensemble(self.state_size, 1, steps_for_env[self.env_name], load_model=self.load_model)
         self.reward_model = self.ensemble.model
 
     def predict_reward(self, state, action):
@@ -99,7 +102,10 @@ class TrainingSystem:
                     next_state, reward, done, info = self.env.step(action)
 
                 if self.use_reward_model:
-                    reward = self.predict_reward(state, action)
+                    if self.continuous:
+                        reward = self.predict_reward(state, action)
+                    else:
+                        reward = self.predict_reward(state, np.array([[action]]))
 
                 next_state = np.reshape(next_state, [1, self.state_size])
                 self.agent.train_model(state, action, reward, next_state, done)

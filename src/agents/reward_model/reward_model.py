@@ -54,14 +54,14 @@ class RewardModel:
 
         # create model
         if load_model:
-            self.training_model.load_weights("./save_model/reward_model_training.h5")
-            self.model.load_weights("./save_model/reward_model_mlp.h5")
+            self.training_model.load_weights("agents/save_model/reward_model_training.h5")
+            self.model.load_weights("agents/save_model/reward_model_mlp.h5")
         else:
             self.training_model, self.model = self.build_model()
 
     def save_model(self):
-        self.training_model.save_weights("./save_model/reward_model_training.h5")
-        self.model.save_weights("./save_model/reward_model_mlp.h5")
+        self.training_model.save_weights("agents/save_model/reward_model_training.h5")
+        self.model.save_weights("agents/save_model/reward_model_mlp.h5")
 
     def probability_lambda(self, seg_rewards):
         seg_1_rewards = tf.gather(seg_rewards, 0)

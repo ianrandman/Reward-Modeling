@@ -4,8 +4,9 @@ import keras.backend as K
 from keras.layers import Input, Dense, Lambda
 
 from keras.optimizers import Adam
-from keras.models import Model, Sequential
+from keras.models import Model, Sequential, load_model, save_model
 import math
+import os
 
 import tensorflow as tf
 
@@ -33,15 +34,15 @@ class A2C_Continuous:
 
         # create model for policy network
         if load_model:
-            self.actor.load_weights("./save_model/a2c_discrete_actor.h5")
-            self.critic.load_weights("./save_model/a2c_discrete_critic.h5")
+            self.actor.load_weights("agents/save_model/a2c_discrete_actor.h5")
+            self.critic.load_weights("agents/save_model/a2c_discrete_critic.h5")
         else:
             self.actor = self.build_actor()
             self.critic = self.build_critic()
 
     def save_model(self):
-        self.actor.save_weights("./save_model/a2c_continuous_actor.h5")
-        self.critic.save_weights("./save_model/a2c_continuous_critic.h5")
+        self.actor.save_weights("agents/save_model/a2c_continuous_actor.h5")
+        self.critic.save_weights("agents/save_model/a2c_continuous_critic.h5")
 
     def tensor_pdf(self, mu, sigma, x):
         # math.exp(-0.5 * (x - mu) ** 2 / sigma ** 2) / (sigma * (2 * math.pi ** 2)**0.5)
