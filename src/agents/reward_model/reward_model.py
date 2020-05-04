@@ -1,7 +1,7 @@
 import numpy as np
 import keras.backend as K
 
-from keras.layers import Input, Dense, concatenate, Lambda, Reshape
+from keras.layers import Input, Dense, concatenate, Lambda, Reshape, Concatenate
 
 from keras.optimizers import Adam
 from keras.models import Model
@@ -78,11 +78,10 @@ class RewardModel:
         seg_2_rewards = tf.gather(seg_rewards, 1)
         return self.probability_lambda(tf.concat([seg_2_rewards, seg_1_rewards], axis=0))
 
-    def cust_loss_wrapper(self, p_1_over_2, p_2_over_1):
-        def cust_loss(pref, predicted):
-            mu_1, mu_2 = pref, 1 - pref
-            return -1 * K.sum(tf.add(tf.multiply(mu_1, tf.log(p_1_over_2)), tf.multiply(mu_2, tf.log(p_2_over_1))))
-        return cust_loss
+    def cust_loss(self, pref, predicted):
+        p_1_over_2, p_2_over_1 = tf.gather(predicted, 0), tf.gather(predicted, 1)
+        mu_1, mu_2 = pref, 1 - pref
+        return -1 * K.sum(tf.add(tf.multiply(mu_1, tf.log(p_1_over_2)), tf.multiply(mu_2, tf.log(p_2_over_1))))
 
     def build_model(self):
         states_input = Input(shape=(2, self.num_steps, self.state_size,))
@@ -117,10 +116,12 @@ class RewardModel:
         p_1_over_2 = Lambda(self.probability_lambda, name='first_lambda')(seg_rewards)
         p_2_over_1 = Lambda(self.probability_lambda_reverse, name='second_lambda')(seg_rewards)
 
-        training_model = Model(inputs=[states_input, actions_input], outputs=[p_1_over_2, p_2_over_1])
+        out = Lambda(lambda x: K.stack([x[0], x[1]]))([p_1_over_2, p_2_over_1])
+
+        training_model = Model(inputs=[states_input, actions_input], outputs=out)
 
         training_model.summary()
-        training_model.compile(loss=self.cust_loss_wrapper(p_1_over_2, p_2_over_1), optimizer=Adam(lr=self.lr))
+        training_model.compile(loss=self.cust_loss, optimizer=Adam(lr=self.lr))
 
         # create MLP model
         states_inp = Input(shape=(self.state_size,))
