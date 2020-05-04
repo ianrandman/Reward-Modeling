@@ -7,7 +7,7 @@ from agents.training_system import TrainingSystem
 def main():
     env_lst = ['CartPole-v0', 'MountainCarContinuous-v0', 'Pendulum-v0', 'LunarLanderContinuous-v2']
 
-    training_system = TrainingSystem(env_lst[2], record=True, use_reward_model=False)
+    training_system = TrainingSystem(env_lst[2], record=False, use_reward_model=True)
     trajectory_builder = TrajectoryBuilder(training_system)
 
     # start up the flask backend api
