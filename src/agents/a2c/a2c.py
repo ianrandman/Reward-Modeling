@@ -15,7 +15,6 @@ class A2C:
         self.state_size = state_size
         self.action_size = action_size
 
-        self.accumulated_steps = 0
         self.accumulated_steps = []
         self.max_steps = 1
 

@@ -23,7 +23,6 @@ class A2C_Continuous:
         self.action_size = action_size
         self.action_high = action_high
 
-        self.accumulated_steps = 0
         self.accumulated_steps = []
         self.max_steps = 25
 
