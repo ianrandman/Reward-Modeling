@@ -14,7 +14,7 @@ def main():
     app = web.get_webapp(trajectory_builder, env_lst, last_feedback_time)
     threading.Thread(target=app.run, args=['0.0.0.0', 5000]).start()
 
-    training_system = TrainingSystem(env_lst[1], last_feedback_time, record=True, use_reward_model=True)
+    training_system = TrainingSystem(env_lst[0], last_feedback_time, record=True, use_reward_model=True, load_model=True)
     multiprocessing.Process(target=training_system.play()).start()
 
 

@@ -10,6 +10,7 @@ pip install flask
 pip install gym
 pip install gym[atari] OR pip install git+https://github.com/Kojoley/atari-py.git (for Windows) 
 conda install -c conda-forge swig
+pip install matplotlib
 pip install Box2D
 brew install ffmpeg (for MacOS)
 ```

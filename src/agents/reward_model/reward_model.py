@@ -54,11 +54,10 @@ class RewardModel:
         self.lr = 0.001
 
         # create model
+        self.training_model, self.model = self.build_model()
         if load_model:
             self.training_model.load_weights("agents/save_model/"+env+"/reward_model_training.h5")
             self.model.load_weights("agents/save_model/"+env+"/reward_model_mlp.h5")
-        else:
-            self.training_model, self.model = self.build_model()
 
     def save_model(self, env):
         if not os.path.exists("agents/save_model/"+env):

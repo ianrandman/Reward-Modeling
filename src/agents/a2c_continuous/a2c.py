@@ -32,12 +32,11 @@ class A2C_Continuous:
         self.critic_lr = 0.05
 
         # create model for policy network
+        self.actor = self.build_actor()
+        self.critic = self.build_critic()
         if load_model:
             self.actor.load_weights("agents/save_model/"+env+"/a2c_discrete_actor.h5")
             self.critic.load_weights("agents/save_model/"+env+"/a2c_discrete_critic.h5")
-        else:
-            self.actor = self.build_actor()
-            self.critic = self.build_critic()
 
     def save_model(self, env):
         if not os.path.exists("agents/save_model/"+env):

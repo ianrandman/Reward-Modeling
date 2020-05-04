@@ -4,12 +4,10 @@ from src.agents.a2c.a2c import A2C
 from src.agents.a2c_continuous.a2c import A2C_Continuous
 from src.agents.reward_model.reward_model import Ensemble
 from src.agents.monitor import Monitor
-from backend.web import LastFeedbackTime
 import json
 import time
 import os
-from os import path, listdir
-from os.path import isfile, join
+import matplotlib.pyplot as plt
 
 
 class TrainingSystem:
@@ -46,12 +44,15 @@ class TrainingSystem:
                                         action_high=action_high, load_model=self.load_model)
         else:
             action_dim = env.action_space.n
-            self.agent = A2C(env=self.env_name, state_size=self.state_size, action_size=action_dim, load_model=self.load_model)
+            self.agent = A2C(env=self.env_name, state_size=self.state_size, action_size=action_dim,
+                             load_model=self.load_model)
 
         if self.continuous:
-            self.ensemble = Ensemble(self.state_size, action_dim, steps_for_env[self.env_name], env, load_model=self.load_model)
+            self.ensemble = Ensemble(self.state_size, action_dim, steps_for_env[self.env_name], self.env_name,
+                                     load_model=self.load_model)
         else:
-            self.ensemble = Ensemble(self.state_size, 1, steps_for_env[self.env_name], env, load_model=self.load_model)
+            self.ensemble = Ensemble(self.state_size, 1, steps_for_env[self.env_name], self.env_name,
+                                     load_model=self.load_model)
         self.reward_model = self.ensemble.model
 
     def predict_reward(self, state, action):
@@ -64,9 +65,32 @@ class TrainingSystem:
             history = self.reward_model.train_model(pref_db)
             self.reward_model_loss.extend(history.history['loss'])
             self.reward_model.save_model(self.env_name)
+            self.save_reward_model_graph()
             print("Finished training reward model")
         else:
             print("Preferences db empty")
+
+    def save_agent_graph(self):
+        plt.tight_layout()
+        plt.plot(self.actor_loss)
+        plt.plot(self.critic_loss)
+        plt.title('Model Loss\nFinal Actor Loss: ' + str(round(self.actor_loss[-1], 4)) +
+                  ' | Final Critic Loss: ' + str(round(self.critic_loss[-1], 4)))
+        plt.ylabel('loss')
+        plt.xlabel('step')
+        plt.legend(['actor', 'critic'], loc='upper left')
+        plt.savefig("agents/save_model/"+self.env_name+"/agents_graphs.png")
+        plt.clf()
+
+    def save_reward_model_graph(self):
+        plt.tight_layout()
+        plt.plot(self.reward_model_loss)
+        plt.title('Model Loss\nFinal Reward Model Loss: ' + str(round(self.reward_model_loss[-1], 4)))
+        plt.ylabel('loss')
+        plt.xlabel('epoch')
+        plt.legend(['reward model'], loc='upper left')
+        plt.savefig("agents/save_model/"+self.env_name+"/reward_model_graph.png")
+        plt.clf()
 
     def pull_pref_db(self):
         self.last_pull_time = time.time()
@@ -93,8 +117,9 @@ class TrainingSystem:
             state = self.env.reset()
             state = np.reshape(state, [1, self.state_size])
 
-            if self.i % 50 == 0:
+            if self.i != 0 and self.i % 50 == 0:
                 self.agent.save_model(self.env_name)
+                self.save_agent_graph()
 
             while not done:
                 if not self.record:
@@ -134,7 +159,8 @@ class TrainingSystem:
                     self.average = np.mean(self.scores)
                     self.i += 1
                     # every episode, plot the play time
-                    print('%s, %s, %s, %s, %s %s' % (self.i, self.num_steps, score, int(self.average), int(self.max_score), timesteps))
+                    print('%s, %s, %s, %s, %s %s' % (self.i, self.num_steps, round(score, 2), round(self.average, 2),
+                                                     round(self.max_score, 1), timesteps))
                     self.num_steps = 0
 
         self.env.close()
