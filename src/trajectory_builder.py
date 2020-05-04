@@ -19,10 +19,10 @@ class TrajectoryBuilder:
             return b64encode(f.read()).decode('utf-8')
 
     def get_variance(self, seg1, seg2):
-        with futures.ThreadPoolExecutor(1) as executor:
-            variance_future = executor.submit(self.training_system.ensemble.get_variance, seg1, seg2)
-            return variance_future.result()
-        # return random.randint(0, 100)
+        # with futures.ThreadPoolExecutor(1) as executor:
+        #     variance_future = executor.submit(self.training_system.ensemble.get_variance, seg1, seg2)
+        #     return variance_future.result()
+        return random.randint(0, 100)
 
     def get_metadata(self):
         """
@@ -34,7 +34,7 @@ class TrajectoryBuilder:
         """
         :return: the binary of two video files for the user to compare
         """
-        dir_path = path.dirname(path.abspath(__file__)) + "/agents/recordings/"+env+"/"
+        dir_path = path.join(path.dirname(path.abspath(__file__)), "/agents/recordings/"+env+"/")
         filenames = [f for f in listdir(dir_path) if f[-4:] == 'json' and isfile(join(dir_path, f))]
         filenames.sort(key=path.basename)  # sort list of names
         filenames = filenames[:-1]

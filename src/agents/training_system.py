@@ -7,6 +7,9 @@ from src.agents.monitor import Monitor
 from backend.web import last_feedback_time
 import json
 import time
+import os
+from os import path, listdir
+from os.path import isfile, join
 
 
 class TrainingSystem:
@@ -23,7 +26,8 @@ class TrainingSystem:
         self.continuous = cont_for_env[self.env_name]
         self.env = env = gym.make(self.env_name)
         if self.record:
-            self.env = Monitor(env, 'recordings/' + self.env_name, max_segments=100, max_steps=steps_for_env[
+            path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'recordings/' + self.env_name)
+            self.env = Monitor(env, path, max_segments=100, max_steps=steps_for_env[
                 self.env_name],
                                video_callable=lambda episode_id: episode_id % 10 == 0, force=True)
         self.scores, self.i, self.average, self.max_score, self.num_steps = [], 0, 0, float('-inf'), 0
@@ -57,13 +61,14 @@ class TrainingSystem:
     def play(self):
         self.__init_ai()
 
-        self.train_reward_model()
+        if self.use_reward_model:
+            self.train_reward_model()
 
         timesteps = 0
         while True:
 
-            # check if db has refreshed
-            if last_feedback_time > self.last_pull_time + 60:
+            # check if db has refreshed to retrain reward model
+            if self.use_reward_model and last_feedback_time > self.last_pull_time + 60:
                 print("got some new feedback, retraining the model...")
                 self.train_reward_model()
 
