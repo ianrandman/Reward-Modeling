@@ -1,7 +1,7 @@
 from backend import web
 from trajectory_builder import TrajectoryBuilder
 import threading, multiprocessing
-from agents.model import TrainingSystem
+from agents.training_system import TrainingSystem
 
 
 def main():
