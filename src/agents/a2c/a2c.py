@@ -104,7 +104,8 @@ class A2C:
         states = np.array([state[0] for state in states[:-1]])
         actor_target = np.array(actor_target)
         critic_target = np.array(critic_target)
-        self.critic.fit(states, critic_target, epochs=1, verbose=0)
-        self.actor.fit(states, actor_target, epochs=1, verbose=0)
+        critic_history = self.critic.fit(states, critic_target, epochs=1, verbose=0)
+        actor_history = self.actor.fit(states, actor_target, epochs=1, verbose=0)
 
         self.accumulated_steps = [self.accumulated_steps[-1]]
+        return 'Trained', critic_history, actor_history

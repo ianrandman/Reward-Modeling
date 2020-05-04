@@ -176,6 +176,6 @@ class RewardModel:
         inputs = [obs, act]
         targets = [prefs, np.zeros((len(prefs),))]
 
-        self.training_model.fit(inputs, targets, epochs=50, batch_size=30, verbose=0)
+        reward_model_history = self.training_model.fit(inputs, targets, epochs=50, batch_size=30, verbose=0)
 
-        K.clear_session()
+        return reward_model_history

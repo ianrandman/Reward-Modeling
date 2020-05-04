@@ -20,6 +20,9 @@ class TrainingSystem:
         self. last_pull_time = None
         self.load_model = load_model
         self.last_feedback_time = last_feedback_time
+        self.critic_loss = []
+        self.actor_loss = []
+        self.reward_model_loss = []
 
     def __init_ai(self):
         cont_for_env = {'CartPole-v0': False, 'MountainCarContinuous-v0': True, 'Pendulum-v0': True,
@@ -58,8 +61,12 @@ class TrainingSystem:
         print("Training reward model...")
         pref_db = self.pull_pref_db()
         if pref_db is not None:
-            self.reward_model.train_model(pref_db)
+            history = self.reward_model.train_model(pref_db)
+            self.reward_model_loss.extend(history.history['loss'])
             self.reward_model.save_model()
+            print("Finished training reward model")
+        else:
+            print("Preferences db empty")
 
     def pull_pref_db(self):
         self.last_pull_time = time.time()
@@ -111,7 +118,10 @@ class TrainingSystem:
                         reward = self.predict_reward(state, np.array([[action]]))
 
                 next_state = np.reshape(next_state, [1, self.state_size])
-                self.agent.train_model(state, action, reward, next_state, done)
+                result = self.agent.train_model(state, action, reward, next_state, done)
+                if result[0] == 'Trained':
+                    self.critic_loss.extend(result[1].history['loss'])
+                    self.actor_loss.extend(result[2].history['loss'])
 
                 score += reward
                 state = next_state
