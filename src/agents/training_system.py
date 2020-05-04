@@ -20,7 +20,8 @@ class TrainingSystem:
     def init_ai(self):
         cont_for_env = {'CartPole-v0': False, 'MountainCarContinuous-v0': True, 'Pendulum-v0': True,
                         'LunarLander-v2': False}
-        steps_for_env = {'CartPole-v0': 25, 'MountainCarContinuous-v0': 200, 'Pendulum-v0': 25, 'LunarLander-v2': 50}
+        steps_for_env = {'CartPole-v0': 25, 'MountainCarContinuous-v0': 200, 'Pendulum-v0': 2, 'LunarLander-v2': 50}
+        # TODO change pendulum back to 25 steps
         self.continuous = cont_for_env[self.env_name]
         self.env = env = gym.make(self.env_name)
         if self.record:
@@ -32,7 +33,8 @@ class TrainingSystem:
 
         if self.continuous:
             action_dim = env.action_space.shape[0]
-            self.agent = A2C_Continuous(state_size=self.state_size, action_size=action_dim)
+            action_high = env.action_space.high
+            self.agent = A2C_Continuous(state_size=self.state_size, action_size=action_dim, action_high=action_high)
         else:
             action_dim = env.action_space.n
             self.agent = A2C(state_size=self.state_size, action_size=action_dim)

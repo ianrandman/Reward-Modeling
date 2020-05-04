@@ -15,13 +15,14 @@ K.clear_session()
 
 # A2C(Advantage Actor-Critic) agent for the Cartpole
 class A2C_Continuous:
-    def __init__(self, state_size, action_size):
+    def __init__(self, state_size, action_size, action_high):
         # if you want to see Cartpole learning, then change to True
         self.render = True
         self.load_model = False
         # get size of state and action
         self.state_size = state_size
         self.action_size = action_size
+        self.action_high = action_high
 
         self.accumulated_steps = 0
         self.accumulated_steps = []
@@ -57,7 +58,7 @@ class A2C_Continuous:
         mu = mu_sigma[0]
         sigma = mu_sigma[1]
         dist = tf.contrib.distributions.Normal(mu, sigma)
-        return tf.clip_by_value(dist.sample(1), -1, 1)
+        return tf.clip_by_value(dist.sample(1), -self.action_high, self.action_high)  # TODO change
 
     # approximate policy and value using Neural Network
     # actor: state is input and probability of each action is output of model

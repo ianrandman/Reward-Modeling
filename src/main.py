@@ -13,7 +13,7 @@ def main():
     app = web.get_webapp(trajectory_builder, env_lst)
     threading.Thread(target=app.run, args=['0.0.0.0', 5000]).start()
 
-    training_system = TrainingSystem(env_lst[1], record=False)
+    training_system = TrainingSystem(env_lst[2], record=False, use_reward_model=True)
     multiprocessing.Process(target=training_system.play()).start()
 
 
