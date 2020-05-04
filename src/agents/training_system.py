@@ -42,16 +42,16 @@ class TrainingSystem:
         if self.continuous:
             action_dim = env.action_space.shape[0]
             action_high = env.action_space.high
-            self.agent = A2C_Continuous(state_size=self.state_size, action_size=action_dim, action_high=action_high,
-                                        load_model=self.load_model)
+            self.agent = A2C_Continuous(env=self.env_name, state_size=self.state_size, action_size=action_dim,
+                                        action_high=action_high, load_model=self.load_model)
         else:
             action_dim = env.action_space.n
-            self.agent = A2C(state_size=self.state_size, action_size=action_dim, load_model=self.load_model)
+            self.agent = A2C(env=self.env_name, state_size=self.state_size, action_size=action_dim, load_model=self.load_model)
 
         if self.continuous:
-            self.ensemble = Ensemble(self.state_size, action_dim, steps_for_env[self.env_name], load_model=self.load_model)
+            self.ensemble = Ensemble(self.state_size, action_dim, steps_for_env[self.env_name], env, load_model=self.load_model)
         else:
-            self.ensemble = Ensemble(self.state_size, 1, steps_for_env[self.env_name], load_model=self.load_model)
+            self.ensemble = Ensemble(self.state_size, 1, steps_for_env[self.env_name], env, load_model=self.load_model)
         self.reward_model = self.ensemble.model
 
     def predict_reward(self, state, action):
@@ -63,7 +63,7 @@ class TrainingSystem:
         if pref_db is not None:
             history = self.reward_model.train_model(pref_db)
             self.reward_model_loss.extend(history.history['loss'])
-            self.reward_model.save_model()
+            self.reward_model.save_model(self.env_name)
             print("Finished training reward model")
         else:
             print("Preferences db empty")
@@ -94,7 +94,7 @@ class TrainingSystem:
             state = np.reshape(state, [1, self.state_size])
 
             if self.i % 50 == 0:
-                self.agent.save_model()
+                self.agent.save_model(self.env_name)
 
             while not done:
                 if not self.record:

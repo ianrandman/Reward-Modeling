@@ -8,7 +8,7 @@ import os
 
 
 class A2C:
-    def __init__(self, state_size, action_size, load_model=False):
+    def __init__(self, state_size, action_size, env, load_model=False):
         self.render = True
         self.load_model = False
         # get size of state and action
@@ -25,15 +25,17 @@ class A2C:
 
         # create model for policy network
         if load_model:
-            self.actor.load_weights("agents/save_model/a2c_discrete_actor.h5")
-            self.critic.load_weights("agents/save_model/a2c_discrete_critic.h5")
+            self.actor.load_weights("agents/save_model/"+env+"/a2c_discrete_actor.h5")
+            self.critic.load_weights("agents/save_model/"+env+"/a2c_discrete_critic.h5")
         else:
             self.actor = self.build_actor()
             self.critic = self.build_critic()
 
-    def save_model(self):
-        self.actor.save_weights("agents/save_model/a2c_discrete_actor.h5")
-        self.critic.save_weights("agents/save_model/a2c_discrete_critic.h5")
+    def save_model(self, env):
+        if not os.path.exists("agents/save_model/"+env):
+            os.makedirs("agents/save_model/"+env)
+        self.actor.save_weights("agents/save_model/"+env+"/a2c_discrete_actor.h5")
+        self.critic.save_weights("agents/save_model/"+env+"/a2c_discrete_critic.h5")
 
     # approximate policy and value using Neural Network
     # actor: state is input and probability of each action is output of model

@@ -7,11 +7,12 @@ from keras.optimizers import Adam
 from keras.models import Model
 
 import tensorflow as tf
+import os
 
 
 class Ensemble:
-    def __init__(self, state_size, action_size, num_steps, num_agents=3, load_model=False):
-        model = RewardModel(state_size, action_size, num_steps, load_model)
+    def __init__(self, state_size, action_size, num_steps, env, num_agents=3, load_model=False):
+        model = RewardModel(state_size, action_size, num_steps, env, load_model)
         self.model = model
         self.model_list = num_agents * [model.training_model]
 
@@ -41,7 +42,7 @@ class Ensemble:
 
 
 class RewardModel:
-    def __init__(self, state_size, action_size, num_steps, load_model):
+    def __init__(self, state_size, action_size, num_steps, env, load_model):
         self.load_model = False
 
         # get size of state and action
@@ -54,14 +55,16 @@ class RewardModel:
 
         # create model
         if load_model:
-            self.training_model.load_weights("agents/save_model/reward_model_training.h5")
-            self.model.load_weights("agents/save_model/reward_model_mlp.h5")
+            self.training_model.load_weights("agents/save_model/"+env+"/reward_model_training.h5")
+            self.model.load_weights("agents/save_model/"+env+"/reward_model_mlp.h5")
         else:
             self.training_model, self.model = self.build_model()
 
-    def save_model(self):
-        self.training_model.save_weights("agents/save_model/reward_model_training.h5")
-        self.model.save_weights("agents/save_model/reward_model_mlp.h5")
+    def save_model(self, env):
+        if not os.path.exists("agents/save_model/"+env):
+            os.makedirs("agents/save_model/"+env)
+        self.training_model.save_weights("agents/save_model/"+env+"/reward_model_training.h5")
+        self.model.save_weights("agents/save_model/"+env+"/reward_model_mlp.h5")
 
     def probability_lambda(self, seg_rewards):
         seg_1_rewards = tf.gather(seg_rewards, 0)

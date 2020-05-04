@@ -14,7 +14,7 @@ K.clear_session()
 
 
 class A2C_Continuous:
-    def __init__(self, state_size, action_size, action_high, load_model=False):
+    def __init__(self, state_size, action_size, action_high, env, load_model=False):
         # if you want to see Cartpole learning, then change to True
         self.render = True
         self.load_model = False
@@ -33,15 +33,17 @@ class A2C_Continuous:
 
         # create model for policy network
         if load_model:
-            self.actor.load_weights("agents/save_model/a2c_discrete_actor.h5")
-            self.critic.load_weights("agents/save_model/a2c_discrete_critic.h5")
+            self.actor.load_weights("agents/save_model/"+env+"/a2c_discrete_actor.h5")
+            self.critic.load_weights("agents/save_model/"+env+"/a2c_discrete_critic.h5")
         else:
             self.actor = self.build_actor()
             self.critic = self.build_critic()
 
-    def save_model(self):
-        self.actor.save_weights("agents/save_model/a2c_continuous_actor.h5")
-        self.critic.save_weights("agents/save_model/a2c_continuous_critic.h5")
+    def save_model(self, env):
+        if not os.path.exists("agents/save_model/"+env):
+            os.makedirs("agents/save_model/"+env)
+        self.actor.save_weights("agents/save_model/"+env+"/a2c_continuous_actor.h5")
+        self.critic.save_weights("agents/save_model/"+env+"/a2c_continuous_critic.h5")
 
     def tensor_pdf(self, mu, sigma, x):
         # math.exp(-0.5 * (x - mu) ** 2 / sigma ** 2) / (sigma * (2 * math.pi ** 2)**0.5)
@@ -60,7 +62,7 @@ class A2C_Continuous:
         mu = mu_sigma[0]
         sigma = mu_sigma[1]
         dist = tf.contrib.distributions.Normal(mu, sigma)
-        return tf.clip_by_value(dist.sample(1), -self.action_high, self.action_high)  # TODO change
+        return tf.clip_by_value(dist.sample(1), -self.action_high, self.action_high)
 
     # approximate policy and value using Neural Network
     # actor: state is input and probability of each action is output of model
