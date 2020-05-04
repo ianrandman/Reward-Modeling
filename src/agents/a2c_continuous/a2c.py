@@ -7,13 +7,11 @@ from keras.optimizers import Adam
 from keras.models import Model, Sequential
 import math
 
-from scipy.stats import norm
-
 import tensorflow as tf
 
 K.clear_session()
 
-# A2C(Advantage Actor-Critic) agent for the Cartpole
+
 class A2C_Continuous:
     def __init__(self, state_size, action_size, action_high):
         # if you want to see Cartpole learning, then change to True
@@ -65,7 +63,6 @@ class A2C_Continuous:
     def build_actor(self):
         input = Input(shape=(self.state_size,))
         hidden = Dense(24, input_dim=self.state_size, activation='relu', kernel_initializer='he_uniform', kernel_regularizer='l1')(input)
-        # hidden = Dense(50, input_dim=self.state_size, activation='relu', kernel_initializer='he_uniform', kernel_regularizer='l1')(hidden)
         mu = Dense(self.action_size, name='mu', activation='tanh', kernel_initializer='he_uniform')(hidden)
         sigma = Dense(self.action_size, name='sigma', activation='softplus', kernel_initializer='he_uniform')(hidden)
         actions = Lambda(self.sample_dist)([mu, sigma])
@@ -80,7 +77,6 @@ class A2C_Continuous:
     def build_critic(self):
         critic = Sequential()
         critic.add(Dense(50, input_dim=self.state_size, activation='relu', kernel_initializer='he_uniform', kernel_regularizer='l1'))
-        # critic.add(Dense(50, input_dim=self.state_size, activation='relu', kernel_initializer='he_uniform', kernel_regularizer='l1'))
         critic.add(Dense(1, activation='linear', kernel_initializer='he_uniform'))
         critic.summary()
         critic.compile(loss="mse", optimizer=Adam(lr=self.critic_lr))
@@ -89,23 +85,16 @@ class A2C_Continuous:
     def get_action(self, state):
         return self.actor.predict(np.reshape(state, [1, self.state_size]))[0]
 
-        # mu, sigma = self.actor.predict(np.reshape(state, [1, self.state_size]))
-        # epsilon = np.random.randn(self.action_size)
-        # action = mu + sigma * epsilon
-        # action = np.clip(action, -2, 2)
-        # return action
-
     # update policy network every episode
     def train_model(self, state, action, reward, next_state, done):
-        self.accumulated_steps.append((state, action, reward))
+        self.accumulated_steps.append((state, reward))
 
         # only update model after max_steps
         if len(self.accumulated_steps) <= self.max_steps and not done:
             return[0]
 
         states = [step[0] for step in self.accumulated_steps]
-        actions = [step[1] for step in self.accumulated_steps]
-        rewards = [step[2] for step in self.accumulated_steps]
+        rewards = [step[1] for step in self.accumulated_steps]
 
         rewards_mean = np.mean(rewards)
         rewards_std = np.std(rewards)

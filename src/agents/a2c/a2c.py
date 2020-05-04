@@ -5,10 +5,9 @@ from keras.layers import Dense
 from keras.optimizers import Adam
 from keras.models import Sequential
 
-# A2C(Advantage Actor-Critic) agent for the Cartpole
+
 class A2C:
     def __init__(self, state_size, action_size):
-        # if you want to see Cartpole learning, then change to True
         self.render = True
         self.load_model = False
         # get size of state and action
@@ -41,7 +40,6 @@ class A2C:
         actor.add(Dense(self.action_size, activation='softmax',
                         kernel_initializer='he_uniform'))
         actor.summary()
-        # See note regarding crossentropy in cartpole_reinforce.py
         actor.compile(loss='categorical_crossentropy',
                       optimizer=Adam(lr=self.actor_lr))
         return actor
@@ -60,7 +58,6 @@ class A2C:
     # using the output of policy network, pick action stochastically
     def get_action(self, state):
         policy = self.actor.predict(state, batch_size=1).flatten()
-        # policy = [0.3, 0.4, 0.3]
         return np.random.choice(self.action_size, p=policy)
 
     # update policy network every episode
