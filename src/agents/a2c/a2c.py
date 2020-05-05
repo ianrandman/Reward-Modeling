@@ -40,10 +40,13 @@ class A2C:
     # actor: state is input and probability of each action is output of model
     def build_actor(self):
         actor = Sequential()
-        actor.add(Dense(24, input_dim=self.state_size, activation='relu',
+        actor.add(Dense(50, input_dim=self.state_size, activation='relu',
                         kernel_initializer='he_uniform'))
         actor.add(Dense(self.action_size, activation='softmax',
                         kernel_initializer='he_uniform'))
+
+        actor._make_predict_function()
+
         actor.summary()
         actor.compile(loss='categorical_crossentropy',
                       optimizer=Adam(lr=self.actor_lr))
@@ -56,6 +59,9 @@ class A2C:
                          kernel_initializer='he_uniform'))
         critic.add(Dense(1, activation='linear',
                          kernel_initializer='he_uniform'))
+
+        critic._make_predict_function()
+
         critic.summary()
         critic.compile(loss="mse", optimizer=Adam(lr=self.critic_lr))
         return critic

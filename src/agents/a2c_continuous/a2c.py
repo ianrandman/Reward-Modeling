@@ -67,11 +67,12 @@ class A2C_Continuous:
     # actor: state is input and probability of each action is output of model
     def build_actor(self):
         input = Input(shape=(self.state_size,))
-        hidden = Dense(24, input_dim=self.state_size, activation='relu', kernel_initializer='he_uniform', kernel_regularizer='l1')(input)
+        hidden = Dense(50, input_dim=self.state_size, activation='relu', kernel_initializer='he_uniform', kernel_regularizer='l1')(input)
         mu = Dense(self.action_size, name='mu', activation='tanh', kernel_initializer='he_uniform')(hidden)
         sigma = Dense(self.action_size, name='sigma', activation='softplus', kernel_initializer='he_uniform')(hidden)
         actions = Lambda(self.sample_dist)([mu, sigma])
         actor = Model(inputs=input, outputs=actions)
+        actor._make_predict_function()
 
         actor.summary()
         actor.compile(loss=self.actor_loss_wrapper(mu, sigma),
@@ -83,6 +84,9 @@ class A2C_Continuous:
         critic = Sequential()
         critic.add(Dense(50, input_dim=self.state_size, activation='relu', kernel_initializer='he_uniform', kernel_regularizer='l1'))
         critic.add(Dense(1, activation='linear', kernel_initializer='he_uniform'))
+
+        critic._make_predict_function()
+
         critic.summary()
         critic.compile(loss="mse", optimizer=Adam(lr=self.critic_lr))
         return critic
