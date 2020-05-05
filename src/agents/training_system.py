@@ -90,13 +90,16 @@ class TrainingSystem:
             plt.clf()
 
     def pull_pref_db(self):
-        with open('preferences/' + self.env_name + '/pref_db.json', 'r') as f:
-            try:
-                pref_db = json.load(f)
-            except Exception as e:
-                raise e
-                # pref_db = []
-            return pref_db if len(pref_db) > 0 else None
+        passed = False
+        while not passed:
+            with open('preferences/' + self.env_name + '/pref_db.json', 'r') as f:
+                try:
+                    pref_db = json.load(f)
+                    passed = True
+                except Exception as e:
+                    raise e
+                    # pref_db = []
+                return pref_db if len(pref_db) > 0 else None
 
     def play(self):
         self.__init_ai()
