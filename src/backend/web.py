@@ -5,19 +5,6 @@ import threading
 import time
 
 
-class LastFeedbackTime:
-    def __init__(self, env_lst):
-        self.last_feedback_times = {}
-        for env in env_lst:
-            self.last_feedback_times[env] = time.time()
-
-    def update_feedback_time(self, env):
-        self.last_feedback_times[env] = time.time()
-
-    def get_last_feeback_time(self, env):
-        return self.last_feedback_times[env]
-
-
 def synchronized(func):
     func.__lock__ = threading.Lock()
 
@@ -51,7 +38,7 @@ def get_pref_db(env):
         return pref_db if len(pref_db) > 0 else None
 
 
-def get_webapp(trajectory_builder, env_lst, last_feedback_time):
+def get_webapp(trajectory_builder, env_lst):
     app = Flask(__name__)
 
     db_for_env = {}

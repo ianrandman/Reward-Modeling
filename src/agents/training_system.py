@@ -5,19 +5,16 @@ from src.agents.a2c_continuous.a2c import A2C_Continuous
 from src.agents.reward_model.reward_model import Ensemble
 from src.agents.monitor import Monitor
 import json
-import time
 import os
 import matplotlib.pyplot as plt
 
 
 class TrainingSystem:
-    def __init__(self, env_name, last_feedback_time, record=True, use_reward_model=False, load_model=False):
+    def __init__(self, env_name, record=True, use_reward_model=False, load_model=False):
         self.env_name = env_name
         self.use_reward_model = use_reward_model
         self.record = record
-        self. last_pull_time = None
         self.load_model = load_model
-        self.last_feedback_time = last_feedback_time
 
     def __init_ai(self):
         cont_for_env = {'CartPole-v0': False, 'MountainCarContinuous-v0': True, 'Pendulum-v0': True,
@@ -92,7 +89,6 @@ class TrainingSystem:
             plt.clf()
 
     def pull_pref_db(self):
-        self.last_pull_time = time.time()
         with open("preferences/" + self.env_name + "/pref_db.json", 'r') as f:
             pref_db = json.load(f)
             return pref_db if len(pref_db) > 0 else None
@@ -106,12 +102,6 @@ class TrainingSystem:
         timesteps = 0
         while True:
 
-            # check if db has refreshed to retrain reward model
-            if self.use_reward_model and self.last_feedback_time.get_last_feeback_time(self.env_name) \
-                    > self.last_pull_time + 90:
-                print("got some new feedback, retraining the model...")
-                self.train_reward_model()
-
             done = False
             score = 0
             state = self.env.reset()
@@ -120,6 +110,9 @@ class TrainingSystem:
             if self.i != 0 and self.i % 50 == 0:
                 self.agent.save_model()
                 self.save_agent_graph()
+
+            if self.i != 0 and self.i % 75 == 0:
+                self.train_reward_model()
 
             while not done:
                 if not self.record:
