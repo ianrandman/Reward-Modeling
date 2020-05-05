@@ -122,6 +122,7 @@ class TrainingSystem:
                 timesteps += 1
 
                 action = self.agent.get_action(state)
+                action[np.isnan(action)] = 0
                 if self.continuous:
                     action = action.reshape((action.shape[1],))
                 if self.record:
