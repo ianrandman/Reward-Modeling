@@ -139,9 +139,12 @@ class TrainingSystem:
 
                 if self.use_reward_model:
                     if self.continuous:
-                        reward = self.predict_reward(state, action)
+                        reward = self.predict_reward(state, np.array([action]))
                     else:
                         reward = self.predict_reward(state, np.array([[action]]))
+
+                    if np.isnan(reward):
+                        reward = 0
 
                 next_state = np.reshape(next_state, [1, self.state_size])
                 result = self.agent.train_model(state, action, reward, next_state, done)
