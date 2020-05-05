@@ -5,6 +5,7 @@ from keras.layers import Dense
 from keras.optimizers import Adam
 from keras.models import Sequential
 import os
+import json
 
 
 class A2C:
@@ -16,6 +17,8 @@ class A2C:
         # get size of state and action
         self.state_size = state_size
         self.action_size = action_size
+        self.actor_loss_history = []
+        self.critic_loss_history = []
 
         self.accumulated_steps = []
         self.max_steps = 1
@@ -29,12 +32,20 @@ class A2C:
         self.actor = self.build_actor()
         self.critic = self.build_critic()
         if load_model:
+            with open(self.save_dir + "/actor_loss_history.json", 'r') as f:
+                self.actor_loss_history = json.load(f)
+            with open(self.save_dir + "/critic_loss_history.json", 'r') as f:
+                self.critic_loss_history = json.load(f)
             self.actor.load_weights(self.save_dir+"/a2c_discrete_actor.h5")
             self.critic.load_weights(self.save_dir+"/a2c_discrete_critic.h5")
 
-    def save_model(self, env):
+    def save_model(self):
         if not os.path.exists(self.save_dir):
             os.makedirs(self.save_dir)
+        with open(self.save_dir + "/actor_loss_history.json", "w+") as f:
+            json.dump(self.actor_loss_history, f)
+        with open(self.save_dir + "/critic_loss_history.json", "w+") as f:
+            json.dump(self.critic_loss_history, f)
         self.actor.save_weights(self.save_dir+"/a2c_discrete_actor.h5")
         self.critic.save_weights(self.save_dir+"/a2c_discrete_critic.h5")
 
@@ -114,6 +125,7 @@ class A2C:
         critic_target = np.array(critic_target)
         critic_history = self.critic.fit(states, critic_target, epochs=1, verbose=0)
         actor_history = self.actor.fit(states, actor_target, epochs=1, verbose=0)
+        self.critic_loss_history.extend(critic_history.history["loss"])
+        self.actor_loss_history.extend(actor_history.history["loss"])
 
         self.accumulated_steps = [self.accumulated_steps[-1]]
-        return 'Trained', critic_history, actor_history

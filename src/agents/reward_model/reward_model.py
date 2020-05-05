@@ -7,6 +7,7 @@ from keras.optimizers import Adam
 from keras.models import Model
 
 import tensorflow as tf
+import json
 import os
 
 
@@ -49,6 +50,7 @@ class RewardModel:
         self.state_size = state_size
         self.action_size = action_size
         self.num_steps = num_steps
+        self.reward_model_training_history = []
 
         # hyperparameters
         self.lr = 0.001
@@ -56,12 +58,16 @@ class RewardModel:
         # create model
         self.training_model, self.model = self.build_model()
         if load_model:
+            with open(self.save_dir + "/reward_model_training_history.json", 'r') as f:
+                self.reward_model_training_history = json.load(f)
             self.training_model.load_weights(self.save_dir+"/reward_model_training.h5")
             self.model.load_weights(self.save_dir+"/reward_model_mlp.h5")
 
-    def save_model(self, env):
+    def save_model(self):
         if not os.path.exists(self.save_dir):
             os.makedirs(self.save_dir)
+        with open(self.save_dir + "/reward_model_training_history.json", "w+") as f:
+            json.dump(self.reward_model_training_history, f)
         self.training_model.save_weights(self.save_dir+"/reward_model_training.h5")
         self.model.save_weights(self.save_dir+"/reward_model_mlp.h5")
 
@@ -181,6 +187,5 @@ class RewardModel:
         inputs = [obs, act]
         targets = [prefs, np.zeros((len(prefs),))]
 
-        reward_model_history = self.training_model.fit(inputs, targets, epochs=50, batch_size=30, verbose=0)
-
-        return reward_model_history
+        training_history = self.training_model.fit(inputs, targets, epochs=50, batch_size=30, verbose=0)
+        self.reward_model_training_history.extend(training_history.history["loss"])

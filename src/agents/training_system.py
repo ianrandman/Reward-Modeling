@@ -18,9 +18,6 @@ class TrainingSystem:
         self. last_pull_time = None
         self.load_model = load_model
         self.last_feedback_time = last_feedback_time
-        self.critic_loss = []
-        self.actor_loss = []
-        self.reward_model_loss = []
 
     def __init_ai(self):
         cont_for_env = {'CartPole-v0': False, 'MountainCarContinuous-v0': True, 'Pendulum-v0': True,
@@ -61,9 +58,7 @@ class TrainingSystem:
         print("Training reward model...")
         pref_db = self.pull_pref_db()
         if pref_db is not None:
-            history = self.reward_model.train_model(pref_db)
-            self.reward_model_loss.extend(history.history['loss'])
-            self.reward_model.save_model(self.env_name)
+            self.reward_model.save_model()
             self.save_reward_model_graph()
             print("Finished training reward model")
         else:
@@ -71,25 +66,30 @@ class TrainingSystem:
 
     def save_agent_graph(self):
         plt.tight_layout()
-        plt.plot(self.actor_loss)
-        plt.plot(self.critic_loss)
-        plt.title('Model Loss\nFinal Actor Loss: ' + str(round(self.actor_loss[-1], 4)) +
-                  ' | Final Critic Loss: ' + str(round(self.critic_loss[-1], 4)))
-        plt.ylabel('loss')
-        plt.xlabel('step')
-        plt.legend(['actor', 'critic'], loc='upper left')
-        plt.savefig("agents/save_model/"+self.env_name+"/agents_graphs.png")
-        plt.clf()
+        actor_loss = self.agent.actor_loss_history
+        critic_loss = self.agent.critic_loss_history
+        if len(actor_loss) > 0 and len(critic_loss) > 0:
+            plt.plot(actor_loss)
+            plt.plot(critic_loss)
+            plt.title('Model Loss\nFinal Actor Loss: ' + str(round(actor_loss[-1], 4)) +
+                      ' | Final Critic Loss: ' + str(round(critic_loss[-1], 4)))
+            plt.ylabel('loss')
+            plt.xlabel('step')
+            plt.legend(['actor', 'critic'], loc='upper left')
+            plt.savefig("agents/save_model/"+self.env_name+"/agents_graphs.png")
+            plt.clf()
 
     def save_reward_model_graph(self):
         plt.tight_layout()
-        plt.plot(self.reward_model_loss)
-        plt.title('Model Loss\nFinal Reward Model Loss: ' + str(round(self.reward_model_loss[-1], 4)))
-        plt.ylabel('loss')
-        plt.xlabel('epoch')
-        plt.legend(['reward model'], loc='upper left')
-        plt.savefig("agents/save_model/"+self.env_name+"/reward_model_graph.png")
-        plt.clf()
+        reward_model_loss = self.reward_model.reward_model_training_history
+        if len(reward_model_loss) > 0:
+            plt.plot(reward_model_loss)
+            plt.title('Model Loss\nFinal Reward Model Loss: ' + str(round(reward_model_loss[-1], 4)))
+            plt.ylabel('loss')
+            plt.xlabel('epoch')
+            plt.legend(['reward model'], loc='upper left')
+            plt.savefig("agents/save_model/"+self.env_name+"/reward_model_graph.png")
+            plt.clf()
 
     def pull_pref_db(self):
         self.last_pull_time = time.time()
@@ -118,7 +118,7 @@ class TrainingSystem:
             state = np.reshape(state, [1, self.state_size])
 
             if self.i != 0 and self.i % 50 == 0:
-                self.agent.save_model(self.env_name)
+                self.agent.save_model()
                 self.save_agent_graph()
 
             while not done:
@@ -146,10 +146,7 @@ class TrainingSystem:
                         reward = 0
 
                 next_state = np.reshape(next_state, [1, self.state_size])
-                result = self.agent.train_model(state, action, reward, next_state, done)
-                if result[0] == 'Trained':
-                    self.critic_loss.extend(result[1].history['loss'])
-                    self.actor_loss.extend(result[2].history['loss'])
+                self.agent.train_model(state, action, reward, next_state, done)
 
                 score += reward
                 state = next_state
