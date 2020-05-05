@@ -100,21 +100,21 @@ class RewardModel:
         ####################################################################################
 
         # state branch
-        x = Dense(64, activation='relu', kernel_regularizer='l1', name='state_mlp0')(states_reshape)
-        x = Dense(32, activation='relu', name='state_mlp1')(x)
-        x = Dense(16, activation='relu', name='state_mlp2')(x)
+        x = Dense(64, activation='relu', kernel_initializer='random_normal', kernel_regularizer='l1', name='state_mlp0')(states_reshape)
+        x = Dense(32, activation='relu', kernel_initializer='random_normal', name='state_mlp1')(x)
+        x = Dense(16, activation='relu', kernel_initializer='random_normal', name='state_mlp2')(x)
 
         # action branch
-        y = Dense(16, activation='relu', name='actions_mlp0')(actions_reshape)
-        y = Dense(32, activation='relu', kernel_regularizer='l1', name='actions_mlp1')(y)
-        y = Dense(16, activation='relu', name='actions_mlp2')(y)
+        y = Dense(16, activation='relu', kernel_initializer='random_normal', name='actions_mlp0')(actions_reshape)
+        y = Dense(32, activation='relu', kernel_initializer='random_normal', kernel_regularizer='l1', name='actions_mlp1')(y)
+        y = Dense(16, activation='relu', kernel_initializer='random_normal', name='actions_mlp2')(y)
 
         # combine branches
         combined = concatenate([x, y], name='concat')
 
         # learn after combination
-        z = Dense(8, activation='relu', name='mlp_output0')(combined)
-        z = Dense(1, activation='tanh', name='mlp_output1')(z)
+        z = Dense(8, activation='relu', kernel_initializer='random_normal', name='mlp_output0')(combined)
+        z = Dense(1, activation='tanh', kernel_initializer='random_normal', name='mlp_output1')(z)
 
         ####################################################################################
 

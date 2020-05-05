@@ -25,7 +25,7 @@ class TrainingSystem:
         self.env = env = gym.make(self.env_name)
         if self.record:
             path = os.path.dirname(os.path.abspath(__file__)) + '/recordings/' + self.env_name
-            self.env = Monitor(env, path, max_segments=100, max_steps=steps_for_env[self.env_name],
+            self.env = Monitor(env, path, max_segments=30, max_steps=steps_for_env[self.env_name],
                                video_callable=lambda episode_id: episode_id % 10 == 0, force=True)
         self.scores, self.i, self.average, self.max_score, self.num_steps = [], 0, 0, float('-inf'), 0
         self.state_size = env.observation_space.shape[0]
@@ -74,7 +74,7 @@ class TrainingSystem:
             plt.ylabel('loss')
             plt.xlabel('step')
             plt.legend(['actor', 'critic'], loc='upper left')
-            plt.savefig('agents/save_model/'+self.env_name+'/agents_graphs.png')
+            plt.savefig('agents/save_model/'+self.env_name+'/agents_graphs.svg')
             plt.clf()
 
     def save_reward_model_graph(self):
@@ -86,15 +86,16 @@ class TrainingSystem:
             plt.ylabel('loss')
             plt.xlabel('epoch')
             plt.legend(['reward model'], loc='upper left')
-            plt.savefig('agents/save_model/'+self.env_name+'/reward_model_graph.png')
+            plt.savefig('agents/save_model/'+self.env_name+'/reward_model_graph.svg')
             plt.clf()
 
     def pull_pref_db(self):
         with open('preferences/' + self.env_name + '/pref_db.json', 'r') as f:
             try:
                 pref_db = json.load(f)
-            except Exception:
-                pref_db = []
+            except Exception as e:
+                raise e
+                # pref_db = []
             return pref_db if len(pref_db) > 0 else None
 
     def play(self):

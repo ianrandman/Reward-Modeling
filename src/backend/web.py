@@ -28,8 +28,9 @@ def save_pref_db(pref_db, env):
     with open("preferences/"+env+'/pref_db.json', 'r') as json_file:
         try:
             old_pref_db = json.load(json_file)
-        except:
-            old_pref_db = []
+        except Exception as e:
+            raise e
+            # old_pref_db = []
         with open("preferences/" + env + '/pref_db.json', 'w') as json_file:
             old_pref_db.extend(pref_db)
             json.dump(old_pref_db, json_file)
@@ -39,8 +40,9 @@ def get_pref_db(env):
     with open("preferences/"+env+"/pref_db.json", 'r') as f:
         try:
             pref_db = json.load(f)
-        except Exception:
-            pref_db = []
+        except Exception as e:
+            raise e
+            # pref_db = []
         return pref_db if len(pref_db) > 0 else None
 
 

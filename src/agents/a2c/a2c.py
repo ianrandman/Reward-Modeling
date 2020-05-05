@@ -25,8 +25,8 @@ class A2C:
 
         # These are hyper parameters for the Policy Gradient
         self.discount_factor = 0.99
-        self.actor_lr = 0.001
-        self.critic_lr = 0.005
+        self.actor_lr = 0.01
+        self.critic_lr = 0.05
 
         # create model for policy network
         self.actor = self.build_actor()
