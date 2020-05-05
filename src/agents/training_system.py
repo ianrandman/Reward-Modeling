@@ -57,7 +57,7 @@ class TrainingSystem:
         self.reward_model = self.ensemble.model
 
     def predict_reward(self, state, action):
-        return self.reward_model_scaler(self.reward_model.get_reward(state, action))
+        return self.reward_model_scaler.transform(np.array(self.reward_model.get_reward(state, action)).reshape(-1, 1))[0][0]
 
     def train_reward_model(self):
         print('Training reward model for %s...' % self.env_name)
@@ -78,7 +78,7 @@ class TrainingSystem:
             sampled_rewards = [self.reward_model.get_reward([state], action) for state, action in
                                zip(self.observation_examples, sampled_actions)]
             scaler = StandardScaler()
-            self.reward_scaler = scaler.fit(sampled_rewards)
+            self.reward_model_scaler = scaler.fit(np.array(sampled_rewards).reshape(-1, 1))
             print('Finished training reward model for %s' % self.env_name)
         else:
             print('Preferences db empty for %s' % self.env_name)
@@ -154,8 +154,8 @@ class TrainingSystem:
                 action = self.agent.get_action(state)
                 if self.continuous:
                     if np.isnan(action).any():
-                        raise Exception("GOT NAN FOR ACTION")
-                        # action[np.isnan(action)] = 0
+                        print("GOT NAN FOR ACTION")
+                        action[np.isnan(action)] = 0
                     action = action.reshape((action.shape[1],))
                 else:
                     action = action if not np.isnan(action) else 0
@@ -171,8 +171,9 @@ class TrainingSystem:
                         reward = self.predict_reward(state, np.array([[action]]))
 
                     if np.isnan(reward):
-                        raise Exception("GOT NAN FOR REWARD")
-                        # reward = 0
+                        # raise Exception("GOT NAN FOR REWARD")
+                        print("GOT NAN FOR REWARD")
+                        reward = 0
 
                 next_state = self.scaler.transform([next_state])[0]
                 next_state = np.reshape(next_state, [1, self.state_size])
