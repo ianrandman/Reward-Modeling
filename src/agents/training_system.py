@@ -162,8 +162,8 @@ class TrainingSystem:
                     self.average = np.mean(self.scores)
                     self.i += 1
                     # every episode, plot the play time
-                    print('%s, %s, %s, %s, %s %s' % (self.i, self.num_steps, round(score, 2), round(self.average, 2),
-                                                     round(self.max_score, 1), timesteps))
+                    print('%s %s, %s, %s, %s, %s %s' % (self.env_name, self.i, self.num_steps, round(score, 2),
+                                                        round(self.average, 2), round(self.max_score, 1), timesteps))
                     self.num_steps = 0
 
         self.env.close()
