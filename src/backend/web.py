@@ -6,11 +6,16 @@ import time
 
 
 class LastFeedbackTime:
-    def __init__(self):
-        self.last_feedback_time = time.time()
+    def __init__(self, env_lst):
+        self.last_feedback_times = {}
+        for env in env_lst:
+            self.last_feedback_times[env] = time.time()
 
-    def update_feedback_time(self):
-        self.last_feedback_time = time.time()
+    def update_feedback_time(self, env):
+        self.last_feedback_times[env] = time.time()
+
+    def get_last_feeback_time(self, env):
+        return self.last_feedback_times[env]
 
 
 def synchronized(func):
@@ -95,10 +100,10 @@ def get_webapp(trajectory_builder, env_lst, last_feedback_time):
 
     @app.route('/preference', methods=['POST'])
     def update_text():
-        last_feedback_time.update_feedback_time()
         user_pref = request.json
         env = user_pref["env"]
         del user_pref['env']
+        last_feedback_time.update_feedback_time(env)
 
         pref_db = db_for_env[env]
         pref_db.append(user_pref)

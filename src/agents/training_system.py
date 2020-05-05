@@ -108,7 +108,8 @@ class TrainingSystem:
         while True:
 
             # check if db has refreshed to retrain reward model
-            if self.use_reward_model and self.last_feedback_time.last_feedback_time > self.last_pull_time + 90:
+            if self.use_reward_model and self.last_feedback_time.get_last_feeback_time(self.env_name) \
+                    > self.last_pull_time + 90:
                 print("got some new feedback, retraining the model...")
                 self.train_reward_model()
 
