@@ -96,10 +96,9 @@ class TrainingSystem:
                 try:
                     pref_db = json.load(f)
                     passed = True
+                    return pref_db if len(pref_db) > 0 else None
                 except Exception as e:
-                    raise e
-                    # pref_db = []
-                return pref_db if len(pref_db) > 0 else None
+                    pass
 
     def play(self):
         self.__init_ai()
@@ -131,7 +130,9 @@ class TrainingSystem:
 
                 action = self.agent.get_action(state)
                 if self.continuous:
-                    action[np.isnan(action)] = 0
+                    if np.isnan(action).any():
+                        raise Exception("GOT NAN FOR ACTION")
+                        # action[np.isnan(action)] = 0
                     action = action.reshape((action.shape[1],))
                 else:
                     action = action if not np.isnan(action) else 0
@@ -147,7 +148,8 @@ class TrainingSystem:
                         reward = self.predict_reward(state, np.array([[action]]))
 
                     if np.isnan(reward):
-                        reward = 0
+                        raise Exception("GOT NAN FOR REWARD")
+                        # reward = 0
 
                 next_state = np.reshape(next_state, [1, self.state_size])
                 self.agent.train_model(state, action, reward, next_state, done)
@@ -163,8 +165,15 @@ class TrainingSystem:
                     self.average = np.mean(self.scores)
                     self.i += 1
                     # every episode, plot the play time
-                    print('%s %s, %s, %s, %s, %s %s' % (self.env_name, self.i, self.num_steps, round(score, 2),
-                                                        round(self.average, 2), round(self.max_score, 1), timesteps))
+                    reward_model_loss = 'None (right now)'
+                    try:
+                        reward_model_loss = self.reward_model.reward_model_training_history[-1]
+                    except Exception:
+                        pass
+
+                    print('%s %s, %s, %s, %s, %s %s %s' % (self.env_name, self.i, self.num_steps, round(score, 2),
+                                                        round(self.average, 2), round(self.max_score, 1), timesteps,
+                                                           reward_model_loss))
                     self.num_steps = 0
 
         self.env.close()
