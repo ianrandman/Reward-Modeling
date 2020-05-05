@@ -20,7 +20,6 @@ class Monitor(Wrapper):
 
         self.total_steps = 0
         self.state_actions = list()
-        self.state_actions_dict = {'pairs': self.state_actions}
         self.max_segments = max_segments
         self.max_steps = max_steps
 
@@ -186,8 +185,9 @@ class Monitor(Wrapper):
     def _dump_json(self):
         if self._video_enabled():
             json_path = self._get_path() + '.json'
+            state_actions_dict = {'pairs': self.state_actions}
             with open(json_path, 'w') as f:
-                json.dump(self.state_actions_dict, f)
+                json.dump(state_actions_dict, f)
             self.state_actions = list()
 
             self._clean_files()
