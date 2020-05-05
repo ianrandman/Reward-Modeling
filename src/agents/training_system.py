@@ -55,6 +55,7 @@ class TrainingSystem:
         print('Training reward model for %s...' % self.env_name)
         pref_db = self.pull_pref_db()
         if pref_db is not None:
+            self.reward_model.train_model(pref_db)
             self.reward_model.save_model()
             self.save_reward_model_graph()
             print('Finished training reward model for %s' % self.env_name)
@@ -114,7 +115,7 @@ class TrainingSystem:
                 self.agent.save_model()
                 self.save_agent_graph()
 
-            if self.i != 0 and self.i % 200 == 0:
+            if self.i != 0 and self.i % 2 == 0:
                 self.train_reward_model()
 
             while not done:
