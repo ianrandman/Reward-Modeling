@@ -17,9 +17,9 @@ class TrainingSystem:
         self.load_model = load_model
 
     def __init_ai(self):
-        cont_for_env = {'CartPole-v0': False, 'MountainCarContinuous-v0': True, 'Pendulum-v0': True,
+        cont_for_env = {'CartPole-v1': False, 'MountainCarContinuous-v0': True, 'Pendulum-v0': True,
                         'LunarLander-v2': False, 'LunarLanderContinuous-v2': True}
-        steps_for_env = {'CartPole-v0': 25, 'MountainCarContinuous-v0': 200, 'Pendulum-v0': 25, 'LunarLander-v2': 50,
+        steps_for_env = {'CartPole-v1': 50, 'MountainCarContinuous-v0': 200, 'Pendulum-v0': 25, 'LunarLander-v2': 50,
                          'LunarLanderContinuous-v2': 50}
         self.continuous = cont_for_env[self.env_name]
         self.env = env = gym.make(self.env_name)
@@ -52,14 +52,14 @@ class TrainingSystem:
         return self.reward_model.get_reward(state, action)
 
     def train_reward_model(self):
-        print("Training reward model...")
+        print('Training reward model for %s...' % self.env_name)
         pref_db = self.pull_pref_db()
         if pref_db is not None:
             self.reward_model.save_model()
             self.save_reward_model_graph()
-            print("Finished training reward model")
+            print('Finished training reward model for %s' % self.env_name)
         else:
-            print("Preferences db empty")
+            print('Preferences db empty for %s' % self.env_name)
 
     def save_agent_graph(self):
         plt.tight_layout()
@@ -73,7 +73,7 @@ class TrainingSystem:
             plt.ylabel('loss')
             plt.xlabel('step')
             plt.legend(['actor', 'critic'], loc='upper left')
-            plt.savefig("agents/save_model/"+self.env_name+"/agents_graphs.png")
+            plt.savefig('agents/save_model/'+self.env_name+'/agents_graphs.png')
             plt.clf()
 
     def save_reward_model_graph(self):
@@ -85,11 +85,11 @@ class TrainingSystem:
             plt.ylabel('loss')
             plt.xlabel('epoch')
             plt.legend(['reward model'], loc='upper left')
-            plt.savefig("agents/save_model/"+self.env_name+"/reward_model_graph.png")
+            plt.savefig('agents/save_model/'+self.env_name+'/reward_model_graph.png')
             plt.clf()
 
     def pull_pref_db(self):
-        with open("preferences/" + self.env_name + "/pref_db.json", 'r') as f:
+        with open('preferences/' + self.env_name + '/pref_db.json', 'r') as f:
             pref_db = json.load(f)
             return pref_db if len(pref_db) > 0 else None
 
@@ -111,7 +111,7 @@ class TrainingSystem:
                 self.agent.save_model()
                 self.save_agent_graph()
 
-            if self.i != 0 and self.i % 75 == 0:
+            if self.i != 0 and self.i % 200 == 0:
                 self.train_reward_model()
 
             while not done:

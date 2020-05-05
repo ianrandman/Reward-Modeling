@@ -90,7 +90,6 @@ def get_webapp(trajectory_builder, env_lst):
         user_pref = request.json
         env = user_pref["env"]
         del user_pref['env']
-        last_feedback_time.update_feedback_time(env)
 
         pref_db = db_for_env[env]
         pref_db.append(user_pref)
