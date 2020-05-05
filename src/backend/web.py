@@ -55,7 +55,7 @@ def get_webapp(trajectory_builder, env_lst):
     # PAGE ROUTES
     @app.route("/cartpole")
     def cartpole():
-        return render_template('env.html', env_name="CartPole-v0")
+        return render_template('env.html', env_name="CartPole-v1")
 
     @app.route("/mountaincar")
     def mountaincar():
