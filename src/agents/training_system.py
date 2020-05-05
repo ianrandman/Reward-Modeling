@@ -30,9 +30,8 @@ class TrainingSystem:
         self.continuous = cont_for_env[self.env_name]
         self.env = env = gym.make(self.env_name)
         if self.record:
-            path = os.path.dirname(os.path.abspath(__file__)) + 'recordings/' + self.env_name
-            self.env = Monitor(env, path, max_segments=100, max_steps=steps_for_env[
-                self.env_name],
+            path = os.path.dirname(os.path.abspath(__file__)) + '/recordings/' + self.env_name
+            self.env = Monitor(env, path, max_segments=100, max_steps=steps_for_env[self.env_name],
                                video_callable=lambda episode_id: episode_id % 10 == 0, force=True)
         self.scores, self.i, self.average, self.max_score, self.num_steps = [], 0, 0, float('-inf'), 0
         self.state_size = env.observation_space.shape[0]
