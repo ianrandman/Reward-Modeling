@@ -43,7 +43,7 @@ class Ensemble:
 
 class RewardModel:
     def __init__(self, state_size, action_size, num_steps, env, load_model):
-        self.load_model = False
+        self.save_dir = os.path.dirname(os.path.abspath(__file__ + '/../')) + '/save_model/' + env + '/'
 
         # get size of state and action
         self.state_size = state_size
@@ -56,14 +56,14 @@ class RewardModel:
         # create model
         self.training_model, self.model = self.build_model()
         if load_model:
-            self.training_model.load_weights("agents/save_model/"+env+"/reward_model_training.h5")
-            self.model.load_weights("agents/save_model/"+env+"/reward_model_mlp.h5")
+            self.training_model.load_weights(self.save_dir+"/reward_model_training.h5")
+            self.model.load_weights(self.save_dir+"/reward_model_mlp.h5")
 
     def save_model(self, env):
-        if not os.path.exists("agents/save_model/"+env):
-            os.makedirs("agents/save_model/"+env)
-        self.training_model.save_weights("agents/save_model/"+env+"/reward_model_training.h5")
-        self.model.save_weights("agents/save_model/"+env+"/reward_model_mlp.h5")
+        if not os.path.exists(self.save_dir):
+            os.makedirs(self.save_dir)
+        self.training_model.save_weights(self.save_dir+"/reward_model_training.h5")
+        self.model.save_weights(self.save_dir+"/reward_model_mlp.h5")
 
     def probability_lambda(self, seg_rewards):
         seg_1_rewards = tf.gather(seg_rewards, 0)

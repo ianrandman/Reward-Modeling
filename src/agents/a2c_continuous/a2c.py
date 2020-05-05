@@ -15,7 +15,8 @@ K.clear_session()
 
 class A2C_Continuous:
     def __init__(self, state_size, action_size, action_high, env, load_model=False):
-        # if you want to see Cartpole learning, then change to True
+        self.save_dir = os.path.dirname(os.path.abspath(__file__ + '/../')) + '/save_model/' + env + '/'
+        
         self.render = True
         self.load_model = False
         # get size of state and action
@@ -35,14 +36,14 @@ class A2C_Continuous:
         self.actor = self.build_actor()
         self.critic = self.build_critic()
         if load_model:
-            self.actor.load_weights("agents/save_model/"+env+"/a2c_discrete_actor.h5")
-            self.critic.load_weights("agents/save_model/"+env+"/a2c_discrete_critic.h5")
+            self.actor.load_weights(self.save_dir+"/a2c_discrete_actor.h5")
+            self.critic.load_weights(self.save_dir+"/a2c_discrete_critic.h5")
 
     def save_model(self, env):
-        if not os.path.exists("agents/save_model/"+env):
-            os.makedirs("agents/save_model/"+env)
-        self.actor.save_weights("agents/save_model/"+env+"/a2c_continuous_actor.h5")
-        self.critic.save_weights("agents/save_model/"+env+"/a2c_continuous_critic.h5")
+        if not os.path.exists(self.save_dir):
+            os.makedirs(self.save_dir)
+        self.actor.save_weights(self.save_dir+"/a2c_continuous_actor.h5")
+        self.critic.save_weights(self.save_dir+"/a2c_continuous_critic.h5")
 
     def tensor_pdf(self, mu, sigma, x):
         # math.exp(-0.5 * (x - mu) ** 2 / sigma ** 2) / (sigma * (2 * math.pi ** 2)**0.5)
