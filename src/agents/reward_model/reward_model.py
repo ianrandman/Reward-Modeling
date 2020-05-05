@@ -53,7 +53,7 @@ class RewardModel:
         self.reward_model_training_history = []
 
         # hyperparameters
-        self.lr = 0.001
+        self.lr = 0.01
 
         # create model
         self.training_model, self.model = self.build_model()

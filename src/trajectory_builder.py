@@ -44,16 +44,22 @@ class TrajectoryBuilder:
         mvpair = []
         if len(filenames) > 2:
             for _ in range(sample_size):
-                pair = random.sample(filenames, 2)
-                # open and read the contents of both json files
-                with open(dir_path+pair[0]) as f1:
-                    data1 = json.load(f1)
-                    with open(dir_path + pair[1]) as f2:
-                        data2 = json.load(f2)
-                        variance = self.get_variance(data1["pairs"], data2["pairs"])
-                        if variance > max_variance:
-                            max_variance = variance
-                            mvpair = [(pair[0], data1), (pair[1], data2)]
+                passed = False
+                while not passed:
+                    try:
+                        pair = random.sample(filenames, 2)
+                        # open and read the contents of both json files
+                        with open(dir_path+pair[0]) as f1:
+                            data1 = json.load(f1)
+                            with open(dir_path + pair[1]) as f2:
+                                data2 = json.load(f2)
+                                variance = self.get_variance(data1["pairs"], data2["pairs"])
+                                if variance > max_variance:
+                                    max_variance = variance
+                                    mvpair = [(pair[0], data1), (pair[1], data2)]
+                        passed = True
+                    except Exception:
+                        pass
 
             # get the mp4 video with the same title as the json file
             vids = [x[0][:-4]+"mp4" for x in mvpair]

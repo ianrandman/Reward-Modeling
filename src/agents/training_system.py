@@ -90,7 +90,10 @@ class TrainingSystem:
 
     def pull_pref_db(self):
         with open('preferences/' + self.env_name + '/pref_db.json', 'r') as f:
-            pref_db = json.load(f)
+            try:
+                pref_db = json.load(f)
+            except Exception:
+                pref_db = []
             return pref_db if len(pref_db) > 0 else None
 
     def play(self):
@@ -122,9 +125,11 @@ class TrainingSystem:
                 timesteps += 1
 
                 action = self.agent.get_action(state)
-                action[np.isnan(action)] = 0
                 if self.continuous:
+                    action[np.isnan(action)] = 0
                     action = action.reshape((action.shape[1],))
+                else:
+                    action = action if not np.isnan(action) else 0
                 if self.record:
                     next_state, reward, done, info = self.env.step(state, action)
                 else:

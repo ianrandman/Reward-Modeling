@@ -42,7 +42,7 @@ function no_response_checker() {
         diff = Date.now() - last_response;
         console.log("Its been some time, diff: "+diff);
         if(diff > 1999) {
-            alert("The server took too long to respond!");
+            // alert("The server took too long to respond!");
         }
     }, 2000);
 }

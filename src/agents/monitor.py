@@ -162,9 +162,23 @@ class Monitor(Wrapper):
 
         if len(list_of_jsons) > self.max_segments:
             oldest_file = min(list_of_mp4s, key=os.path.basename)
-            os.remove(os.path.abspath(oldest_file))
+
+            succeed = False
+            while not succeed:
+                try:
+                    os.remove(os.path.abspath(oldest_file))
+                    succeed = True
+                except Exception:
+                    pass
             oldest_file = min(list_of_jsons, key=os.path.basename)
-            os.remove(os.path.abspath(oldest_file))
+
+            succeed = False
+            while not succeed:
+                try:
+                    os.remove(os.path.abspath(oldest_file))
+                    succeed = True
+                except Exception:
+                    pass
 
     def _get_path(self):
         return os.path.join(self.directory, 'video{:06}_{:06}'.format(self.episode_id, self.num_vid))
