@@ -185,7 +185,6 @@ class RewardModel:
             except Exception as e:
                 z = 1
 
-
         prefs = [triple['p'] for triple in pref_db]
 
         obs = np.array(obs)

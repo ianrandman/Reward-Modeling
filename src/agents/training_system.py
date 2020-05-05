@@ -7,6 +7,7 @@ from src.agents.monitor import Monitor
 import json
 import os
 import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 
 class TrainingSystem:
@@ -15,6 +16,7 @@ class TrainingSystem:
         self.use_reward_model = use_reward_model
         self.record = record
         self.load_model = load_model
+        self.reward_model_scaler = None
 
     def __init_ai(self):
         cont_for_env = {'CartPole-v1': False, 'MountainCarContinuous-v0': True, 'Pendulum-v0': True,
@@ -23,6 +25,12 @@ class TrainingSystem:
                          'LunarLanderContinuous-v2': 50}
         self.continuous = cont_for_env[self.env_name]
         self.env = env = gym.make(self.env_name)
+
+        self.observation_examples = np.array([[np.clip(x, -100, 100) for x in self.env.observation_space.sample()]
+                                              for _ in range(10000)])
+        self.scaler = MinMaxScaler(feature_range=(-1, 1))
+        self.scaler.fit(self.observation_examples)
+
         if self.record:
             path = os.path.dirname(os.path.abspath(__file__)) + '/recordings/' + self.env_name
             self.env = Monitor(env, path, max_segments=30, max_steps=steps_for_env[self.env_name],
@@ -49,7 +57,7 @@ class TrainingSystem:
         self.reward_model = self.ensemble.model
 
     def predict_reward(self, state, action):
-        return self.reward_model.get_reward(state, action)
+        return self.reward_model_scaler(self.reward_model.get_reward(state, action))
 
     def train_reward_model(self):
         print('Training reward model for %s...' % self.env_name)
@@ -58,6 +66,19 @@ class TrainingSystem:
             self.reward_model.train_model(pref_db)
             self.reward_model.save_model()
             self.save_reward_model_graph()
+
+            if self.continuous:
+                sampled_actions = [np.array(self.agent.get_action(self.scaler.transform([state])[0]))
+                                   for state in self.observation_examples]
+            else:
+                sampled_actions = [np.array([self.agent.get_action(
+                    np.reshape(self.scaler.transform([state])[0], [1, self.state_size]))])
+                   for state in self.observation_examples]
+
+            sampled_rewards = [self.reward_model.get_reward([state], action) for state, action in
+                               zip(self.observation_examples, sampled_actions)]
+            scaler = StandardScaler()
+            self.reward_scaler = scaler.fit(sampled_rewards)
             print('Finished training reward model for %s' % self.env_name)
         else:
             print('Preferences db empty for %s' % self.env_name)
@@ -112,14 +133,16 @@ class TrainingSystem:
             done = False
             score = 0
             state = self.env.reset()
+            state = self.scaler.transform([state])[0]
             state = np.reshape(state, [1, self.state_size])
 
             if self.i != 0 and self.i % 50 == 0:
                 self.agent.save_model()
                 self.save_agent_graph()
 
-            if self.i != 0 and self.i % 2 == 0:
-                self.train_reward_model()
+            if self.use_reward_model:
+                if self.i != 0 and self.i % 15 == 0:
+                    self.train_reward_model()
 
             while not done:
                 if not self.record:
@@ -151,6 +174,7 @@ class TrainingSystem:
                         raise Exception("GOT NAN FOR REWARD")
                         # reward = 0
 
+                next_state = self.scaler.transform([next_state])[0]
                 next_state = np.reshape(next_state, [1, self.state_size])
                 self.agent.train_model(state, action, reward, next_state, done)
 
