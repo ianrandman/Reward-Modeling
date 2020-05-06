@@ -30,6 +30,7 @@ class TrainingSystem:
                                               for _ in range(10000)])
         self.scaler = MinMaxScaler(feature_range=(-1, 1))
         self.scaler.fit(self.observation_examples)
+        self.reward_model_scaler = StandardScaler()
 
         if self.record:
             path = os.path.dirname(os.path.abspath(__file__)) + '/recordings/' + self.env_name
@@ -85,8 +86,8 @@ class TrainingSystem:
 
     def save_agent_graph(self):
         plt.tight_layout()
-        actor_loss = self.agent.actor_loss_history
-        critic_loss = self.agent.critic_loss_history
+        actor_loss = self.agent.actor_loss_history[1:]
+        critic_loss = self.agent.critic_loss_history[1:]
         if len(actor_loss) > 0 and len(critic_loss) > 0:
             plt.plot(actor_loss)
             plt.plot(critic_loss)
@@ -141,17 +142,18 @@ class TrainingSystem:
                 self.save_agent_graph()
 
             if self.use_reward_model:
-                if self.i != 0 and self.i % 15 == 0:
+                if self.i != 0 and self.i % 50 == 0:
                     self.train_reward_model()
 
             while not done:
-                if not self.record:
-                    self.env.render()
+                # if not self.record:
+                #     self.env.render()
 
                 self.num_steps += 1
                 timesteps += 1
 
                 action = self.agent.get_action(state)
+                got_nan = False
                 if self.continuous:
                     if np.isnan(action).any():
                         print("GOT NAN FOR ACTION")
@@ -171,13 +173,15 @@ class TrainingSystem:
                         reward = self.predict_reward(state, np.array([[action]]))
 
                     if np.isnan(reward):
+                        got_nan = True
                         # raise Exception("GOT NAN FOR REWARD")
-                        print("GOT NAN FOR REWARD")
+                        # print("GOT NAN FOR REWARD")
                         reward = 0
 
                 next_state = self.scaler.transform([next_state])[0]
                 next_state = np.reshape(next_state, [1, self.state_size])
-                self.agent.train_model(state, action, reward, next_state, done)
+                if not got_nan:
+                    self.agent.train_model(state, action, reward, next_state, done)
 
                 score += reward
                 state = next_state
@@ -189,16 +193,8 @@ class TrainingSystem:
                         self.scores.pop(0)
                     self.average = np.mean(self.scores)
                     self.i += 1
-                    # every episode, plot the play time
-                    reward_model_loss = 'None (right now)'
-                    try:
-                        reward_model_loss = self.reward_model.reward_model_training_history[-1]
-                    except Exception:
-                        pass
-
-                    print('%s %s, %s, %s, %s, %s %s %s' % (self.env_name, self.i, self.num_steps, round(score, 2),
-                                                        round(self.average, 2), round(self.max_score, 1), timesteps,
-                                                           reward_model_loss))
+                    print('%s %s, %s, %s, %s, %s %s' % (self.env_name, self.i, self.num_steps, round(score, 2),
+                                                        round(self.average, 2), round(self.max_score, 1), timesteps))
                     self.num_steps = 0
 
         self.env.close()

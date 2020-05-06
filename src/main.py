@@ -6,7 +6,7 @@ from agents.training_system import TrainingSystem
 
 
 def main():
-    env_lst = ['LunarLanderContinuous-v2', 'MountainCarContinuous-v0', 'CartPole-v1']#, 'CartPole-v1'  # 'Pendulum-v0'
+    env_lst = ['LunarLanderContinuous-v2', 'CartPole-v1']
     trajectory_builder = TrajectoryBuilder()
 
     # start up the flask backend api
@@ -15,7 +15,7 @@ def main():
 
     for env in env_lst:
         if env == env_lst[0]:
-            training_system = TrainingSystem(env, record=True, use_reward_model=True, load_model=False)
+            training_system = TrainingSystem(env, record=True, use_reward_model=False, load_model=False)
             multiprocessing.Process(target=training_system.play).start()
 
 
