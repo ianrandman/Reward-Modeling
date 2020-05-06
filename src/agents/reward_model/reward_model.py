@@ -53,7 +53,7 @@ class RewardModel:
         self.reward_model_training_history = []
 
         # hyperparameters
-        self.lr = 0.0001
+        self.lr = 0.00001
 
         # create model
         self.training_model, self.model = self.build_model()
@@ -115,7 +115,7 @@ class RewardModel:
         combined = concatenate([x, y], name='concat')
 
         # learn after combination
-        z = Dense(8, activation='tanh', kernel_initializer='he_uniform', name='mlp_output0')(combined)
+        z = Dense(8, activation='selu', kernel_initializer='he_uniform', name='mlp_output0')(combined)
         z = Dense(1, activation='tanh', kernel_initializer='he_uniform', name='mlp_output1')(z)
 
         ####################################################################################
