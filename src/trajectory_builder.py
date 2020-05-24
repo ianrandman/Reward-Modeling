@@ -21,7 +21,7 @@ class TrajectoryBuilder:
 
     def get_variance(self, seg1, seg2):
         # TODO as of now this just returns a random number. This results in a random pair being chosen.
-        #   if the get_variance for an Ensemble (agents/reward_model/reward_model.py) is fixed, this
+        #   if the get_variance for an Ensemble (agents/reward_model/reward_model_TF.py) is fixed, this
         #   should call that function.
         return random.randint(0, 100)
 

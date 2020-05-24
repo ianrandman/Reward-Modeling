@@ -1,8 +1,8 @@
 import gym
 import numpy as np
-from src.agents.a2c.a2c import A2C
-from src.agents.a2c_continuous.a2c import A2C_Continuous
-from src.agents.reward_model.reward_model import Ensemble
+from src.agents.a2c.a2c_discrete_TF import A2C
+from src.agents.a2c_continuous.a2c_continuous_TF import A2C_Continuous
+from src.agents.reward_model.reward_model_TF import Ensemble
 from src.agents.monitor import Monitor
 import json
 import os
@@ -60,13 +60,14 @@ class TrainingSystem:
             self.agent = A2C(env=self.env_name, state_size=self.state_size, action_size=action_dim,
                              load_model=self.load_model)
 
-        if self.continuous:
-            self.ensemble = Ensemble(self.state_size, action_dim, steps_for_env[self.env_name], self.env_name,
-                                     load_model=self.load_model)
-        else:
-            self.ensemble = Ensemble(self.state_size, 1, steps_for_env[self.env_name], self.env_name,
-                                     load_model=self.load_model)
-        self.reward_model = self.ensemble.model
+        if self.use_reward_model:
+            if self.continuous:
+                self.ensemble = Ensemble(self.state_size, action_dim, steps_for_env[self.env_name], self.env_name,
+                                         load_model=self.load_model)
+            else:
+                self.ensemble = Ensemble(self.state_size, 1, steps_for_env[self.env_name], self.env_name,
+                                         load_model=self.load_model)
+            self.reward_model = self.ensemble.model
 
     def predict_reward(self, state, action):
         """
@@ -163,6 +164,7 @@ class TrainingSystem:
         observation, which the agent then uses to train on and optimize this reward. Periodically, the reward model is
         trained on any new user feedback to better represent the humans' internal reward function.
         """
+        print("play")
         self.__init_ai()
 
         if self.use_reward_model:
@@ -186,7 +188,7 @@ class TrainingSystem:
                     self.train_reward_model()
 
             while not done:
-                if not self.record:
+                if not self.record and self.average > -100:
                     self.env.render()
 
                 self.num_steps += 1
