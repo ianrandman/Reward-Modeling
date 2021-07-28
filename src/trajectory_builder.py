@@ -20,15 +20,16 @@ class TrajectoryBuilder:
             return b64encode(f.read()).decode('utf-8')
 
     def get_variance(self, seg1, seg2):
-        # with futures.ThreadPoolExecutor(1) as executor:
-        #     variance_future = executor.submit(self.training_system.ensemble.get_variance, seg1, seg2)
-        #     return variance_future.result()
+        # TODO as of now this just returns a random number. This results in a random pair being chosen.
+        #   if the get_variance for an Ensemble (agents/reward_model/reward_model_TF.py) is fixed, this
+        #   should call that function.
         return random.randint(0, 100)
 
     def get_metadata(self):
         """
         Returns a map with some metadata about the model
         """
+        # currently there is no metadata to send
         return {}
 
     def get_pair(self, env, sample_size=20):
@@ -71,8 +72,3 @@ class TrajectoryBuilder:
                     "seq2": {"sopairs": mvpair[1][1]["pairs"], "vid": env_vids[1]},
                     "metadata": self.get_metadata()}
         return {"error": "There are not enough clips to compare!"}
-
-
-if __name__ == '__main__':
-    trajectorybuilder = TrajectoryBuilder()
-    print(trajectorybuilder.get_pair())

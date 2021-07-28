@@ -26,3 +26,5 @@ change some overall specifics about the run, modify the parameters of TrainingSy
 specifies if the runs are recorded (mandatory for giving human feedback), use_reward_model specifies whether to use the
 learned reward model or the OpenAI provided reward function, and load_model specifies whether or not to load a saved
 model file.
+
+To give feedback to the model, run the program and go to `localhost:5000`.

@@ -1,8 +1,8 @@
 import gym
 import numpy as np
-from src.agents.a2c.a2c import A2C
-from src.agents.a2c_continuous.a2c import A2C_Continuous
-from src.agents.reward_model.reward_model import Ensemble
+from src.agents.a2c.a2c_discrete_TF import A2C
+from src.agents.a2c_continuous.a2c_continuous_TF import A2C_Continuous
+from src.agents.reward_model.reward_model_TF import Ensemble
 from src.agents.monitor import Monitor
 import json
 import os
@@ -11,6 +11,13 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 
 class TrainingSystem:
+    """
+    In charge of running the entire training process. The play() function is the "main" that starts up this process.
+    This class holds the reward model and agent model for a specific environment. It runs simulations in the env,
+    using the agent to decide what moves to take, while the reward model gives it a corresponding reward. The agent
+    uses this reward to train on each step, while the reward model trains periodically throughout the process.
+    """
+
     def __init__(self, env_name, record=True, use_reward_model=False, load_model=False):
         self.env_name = env_name
         self.use_reward_model = use_reward_model
@@ -19,6 +26,10 @@ class TrainingSystem:
         self.reward_model_scaler = None
 
     def __init_ai(self):
+        """
+        Set up the rest of the initialization. This is called at the beginning of play() and is a separate method
+        so that all AI components are created and used by the same thread (due to limitations with Tensorflow).
+        """
         cont_for_env = {'CartPole-v1': False, 'MountainCarContinuous-v0': True, 'Pendulum-v0': True,
                         'LunarLander-v2': False, 'LunarLanderContinuous-v2': True}
         steps_for_env = {'CartPole-v1': 50, 'MountainCarContinuous-v0': 200, 'Pendulum-v0': 25, 'LunarLander-v2': 50,
@@ -49,18 +60,29 @@ class TrainingSystem:
             self.agent = A2C(env=self.env_name, state_size=self.state_size, action_size=action_dim,
                              load_model=self.load_model)
 
-        if self.continuous:
-            self.ensemble = Ensemble(self.state_size, action_dim, steps_for_env[self.env_name], self.env_name,
-                                     load_model=self.load_model)
-        else:
-            self.ensemble = Ensemble(self.state_size, 1, steps_for_env[self.env_name], self.env_name,
-                                     load_model=self.load_model)
-        self.reward_model = self.ensemble.model
+        if self.use_reward_model:
+            if self.continuous:
+                self.ensemble = Ensemble(self.state_size, action_dim, steps_for_env[self.env_name], self.env_name,
+                                         load_model=self.load_model)
+            else:
+                self.ensemble = Ensemble(self.state_size, 1, steps_for_env[self.env_name], self.env_name,
+                                         load_model=self.load_model)
+            self.reward_model = self.ensemble.model
 
     def predict_reward(self, state, action):
+        """
+        Returns a scaled reward for an action given a state. The reward is scales with self.reward_model_scaler, which
+        is updated every time the reward model is retrained.
+        """
         return self.reward_model_scaler.transform(np.array(self.reward_model.get_reward(state, action)).reshape(-1, 1))[0][0]
 
     def train_reward_model(self):
+        """
+        Trains the reward model. New user feedback was probably given, so we need to update the reward model to better
+        reflect the human reward function. We first pull the pref_db for this env and then use this as training data to
+        update the model. Finally, we recreate our scalar for the rewards, preserving 0 mean and normal st dev for the
+        rewards.
+        """
         print('Training reward model for %s...' % self.env_name)
         pref_db = self.pull_pref_db()
         if pref_db is not None:
@@ -85,6 +107,10 @@ class TrainingSystem:
             print('Preferences db empty for %s' % self.env_name)
 
     def save_agent_graph(self):
+        """
+        Creates a svg graph of the loss history for the agent. Useful for reporting results and seeing the performance
+        of the model over time.
+        """
         plt.tight_layout()
         actor_loss = self.agent.actor_loss_history[1:]
         critic_loss = self.agent.critic_loss_history[1:]
@@ -100,6 +126,10 @@ class TrainingSystem:
             plt.clf()
 
     def save_reward_model_graph(self):
+        """
+        Creates a svg graph of the loss history for the reward model. Useful for reporting results and seeing the
+        performance of the model over time.
+        """
         plt.tight_layout()
         reward_model_loss = self.reward_model.reward_model_training_history
         if len(reward_model_loss) > 0:
@@ -112,6 +142,10 @@ class TrainingSystem:
             plt.clf()
 
     def pull_pref_db(self):
+        """
+        Pulls the corresponding pref_db for this environment from the saved json file. If it fails (the file is in the
+        middle of being written to), try again.
+        """
         passed = False
         while not passed:
             with open('preferences/' + self.env_name + '/pref_db.json', 'r') as f:
@@ -123,6 +157,14 @@ class TrainingSystem:
                     pass
 
     def play(self):
+        """
+        This is the "main" that starts up the simulation. Runs in a loop forever, with each loop simulating an entire
+        run of the environment. Inside this loop, there is another loop for each frame of the simulation where the
+        agent takes an action based on its environment. The reward model gives a reward for this action based on the
+        observation, which the agent then uses to train on and optimize this reward. Periodically, the reward model is
+        trained on any new user feedback to better represent the humans' internal reward function.
+        """
+        print("play")
         self.__init_ai()
 
         if self.use_reward_model:
@@ -146,8 +188,8 @@ class TrainingSystem:
                     self.train_reward_model()
 
             while not done:
-                # if not self.record:
-                #     self.env.render()
+                if not self.record and self.average > -100:
+                    self.env.render()
 
                 self.num_steps += 1
                 timesteps += 1
